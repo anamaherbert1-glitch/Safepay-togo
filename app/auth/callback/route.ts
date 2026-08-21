@@ -5,6 +5,8 @@ import { cookies } from "next/headers";
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
+  const oauth = requestUrl.searchParams.get("oauth") === "1";
+  const email = requestUrl.searchParams.get("email") === "verified";
 
   if (code) {
     const cookieStore = await cookies();
@@ -14,9 +16,7 @@ export async function GET(request: Request) {
       {
         cookies: {
           getAll() { return cookieStore.getAll(); },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
-          },
+          setAll(cookiesToSet) { cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options)); },
         },
       }
     );
@@ -24,5 +24,7 @@ export async function GET(request: Request) {
     if (error) return NextResponse.redirect(new URL(`/auth?error=${encodeURIComponent(error.message)}`, requestUrl.origin));
   }
 
-  return NextResponse.redirect(new URL("/auth?oauth=1", requestUrl.origin));
+  if (email) return NextResponse.redirect(new URL("/auth?email=verified", requestUrl.origin));
+  if (oauth) return NextResponse.redirect(new URL("/auth?oauth=1", requestUrl.origin));
+  return NextResponse.redirect(new URL("/auth", requestUrl.origin));
 }
