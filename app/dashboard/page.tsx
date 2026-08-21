@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 function ProfileIcon() {
@@ -8,6 +9,7 @@ function ProfileIcon() {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [wallet, setWallet] = useState<{ balance: number; locked_balance: number; currency: string } | null>(null);
   const [userEmail, setUserEmail] = useState("");
   const [error, setError] = useState("");
@@ -30,7 +32,7 @@ export default function DashboardPage() {
   return <main className="safepay-shell" style={{ minHeight: "100vh", padding: 20 }}>
     <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 56 }}>
       <strong style={{ fontSize: 21 }}>SafePay</strong>
-      <button className="safepay-icon" aria-label="Profil" title="Profil"><ProfileIcon /></button>
+      <button className="safepay-icon" aria-label="Profil" title="Profil" onClick={() => router.push("/profile")}><ProfileIcon /></button>
     </header>
     <section style={{ paddingTop: 24 }}>
       <div style={{ color: "var(--sp-muted)", fontSize: 13 }}>Compte connecté</div>
