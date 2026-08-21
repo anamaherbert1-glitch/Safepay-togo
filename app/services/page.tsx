@@ -8,9 +8,9 @@ function TransferIcon() { return <svg viewBox="0 0 24 24" width="23" height="23"
 function HistoryIcon() { return <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 5v4h4"/><path d="M12 8v4l3 2"/></svg>; }
 
 const services = [
-  ["Mobile Money", "Recharge et paiements", "orange", "/wallet", <WalletIcon />],
-  ["Paiements", "Gérer vos paiements", "violet", "/transactions", <CardIcon />],
-  ["Transferts", "Envoyer ou recevoir", "green", "/transactions/new", <TransferIcon />],
+  ["Recharger", "T-Money, Moov Money ou carte", "orange", "/wallet/deposit", <WalletIcon />],
+  ["Retirer", "T-Money ou Moov Money", "violet", "/wallet/withdraw", <CardIcon />],
+  ["Transferts", "Créer une transaction sécurisée", "green", "/transactions/new", <TransferIcon />],
   ["Transactions", "Voir l'historique", "blue", "/transactions", <HistoryIcon />],
 ] as const;
 
