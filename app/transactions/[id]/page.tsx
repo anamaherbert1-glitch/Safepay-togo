@@ -15,6 +15,7 @@ export default function TransactionDetailPage() {
   const [tx, setTx] = useState<Transaction | null>(null);
   const [history, setHistory] = useState<History[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isBuyer, setIsBuyer] = useState(false);
   const [reason, setReason] = useState("");
   const [disputeOpen, setDisputeOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -27,7 +28,10 @@ export default function TransactionDetailPage() {
     setUserId(user.id);
     const { data, error: txError } = await supabase.from("transactions").select("id,account_id,seller_id,seller_phone,seller_country,description,amount,commission,currency,status,delivery_delay,conditions,created_at,updated_at").eq("id", params.id).single();
     if (txError) { setError(txError.message); return; }
-    setTx(data as Transaction);
+    const transaction = data as Transaction;
+    setTx(transaction);
+    const { data: buyerAccount } = await supabase.from("accounts").select("id").eq("id", transaction.account_id).eq("user_id", user.id).maybeSingle();
+    setIsBuyer(Boolean(buyerAccount));
     const { data: events } = await supabase.from("transaction_status_history").select("id,from_status,to_status,reason,created_at").eq("transaction_id", params.id).order("created_at", { ascending: false });
     setHistory((events ?? []) as History[]);
   }
@@ -58,7 +62,6 @@ export default function TransactionDetailPage() {
   if (error && !tx) return <main className="safepay-shell safepay-dashboard"><header className="sp-header"><button className="sp-back" onClick={() => router.back()} aria-label="Retour">←</button><strong>Transaction</strong></header><section className="sp-content"><p className="sp-form-error">{error}</p></section></main>;
   if (!tx) return <main className="safepay-shell safepay-dashboard"><header className="sp-header"><button className="sp-back" onClick={() => router.back()} aria-label="Retour">←</button><strong>Transaction</strong></header><section className="sp-content"><p className="sp-muted">Chargement…</p></section></main>;
 
-  const isBuyer = userId === null ? false : tx.account_id !== "" && userId !== null;
   const isSeller = tx.seller_id === userId;
   const total = Number(tx.amount) + Number(tx.commission);
   const money = (value: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: tx.currency, maximumFractionDigits: 0 }).format(value);
@@ -74,7 +77,7 @@ export default function TransactionDetailPage() {
           {tx.status === "pending" && isBuyer && <button className="sp-secondary-button" disabled={busy} onClick={() => transition("cancelled", "Buyer cancelled transaction")}>Annuler</button>}
           {tx.status === "funded" && isSeller && <button className="safepay-primary" disabled={busy} onClick={() => transition("delivered", "Seller marked transaction delivered")}>Confirmer la livraison</button>}
           {tx.status === "delivered" && isBuyer && <button className="safepay-primary" disabled={busy} onClick={() => transition("completed", "Buyer confirmed delivery")}>Confirmer et libérer les fonds</button>}
-          {(tx.status === "funded" || tx.status === "delivered") && <button className="sp-secondary-button" disabled={busy} onClick={() => setDisputeOpen(true)}>Ouvrir un litige</button>}
+          {(tx.status === "funded" || tx.status === "delivered") && (isBuyer || isSeller) && <button className="sp-secondary-button" disabled={busy} onClick={() => setDisputeOpen(true)}>Ouvrir un litige</button>}
           {tx.status === "completed" && <p className="sp-success-note">Les fonds ont été libérés par le backend SafePay.</p>}
           {tx.status === "cancelled" && <p className="sp-muted">Cette transaction est annulée.</p>}
           {tx.status === "disputed" && <p className="sp-muted">Le dossier est en litige. La résolution doit passer par le système autorisé.</p>}
