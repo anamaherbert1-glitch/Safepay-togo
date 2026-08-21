@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { IconButton } from "@/components/ui/IconButton";
 
@@ -19,21 +19,46 @@ const items = [
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    const onPopState = () => setModalOpen(false);
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  function goBack() {
+    if (modalOpen) {
+      setModalOpen(false);
+      return;
+    }
+    if (window.history.length > 1) router.back();
+    else router.push("/");
+  }
 
   return (
     <div className="safepay-shell safepay-dashboard">
       <header className="sp-header">
+        <button className="sp-back" onClick={goBack} aria-label="Retour">←</button>
         <button className="sp-brand" onClick={() => router.push("/")} aria-label="Accueil SafePay">SafePay</button>
-        <IconButton label="Profil" onClick={() => router.push("/profile")}><ProfileIcon /></IconButton>
+        <IconButton label="Profil" active={pathname === "/profile"} onClick={() => router.push("/profile")}><ProfileIcon /></IconButton>
       </header>
       <main className="sp-content">{children}</main>
       <nav className="sp-bottom-nav" aria-label="Navigation principale">
         {items.map((item) => (
-          <button key={item.href} className={pathname === item.href ? "active" : ""} onClick={() => router.push(item.href)}>
+          <button key={item.href} className={pathname === item.href ? "active" : ""} onClick={() => router.push(item.href)} aria-current={pathname === item.href ? "page" : undefined}>
             <span aria-hidden="true">{item.icon}</span><small>{item.label}</small>
           </button>
         ))}
       </nav>
+      {modalOpen && (
+        <div className="sp-modal-backdrop" role="presentation">
+          <section className="sp-modal" role="dialog" aria-modal="true" aria-label="Fenêtre SafePay">
+            <button type="button" className="sp-modal-back" onClick={() => setModalOpen(false)}>← Retour</button>
+            <div>Fenêtre SafePay</div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
