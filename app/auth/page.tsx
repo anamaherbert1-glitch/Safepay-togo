@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { SAFE_PAY_COUNTRIES, onlyPhoneCharacters, validatePhone } from "@/lib/phone";
 
@@ -10,13 +10,32 @@ type Step = "method" | "password" | "emailVerify" | "phone" | "otp" | "profile";
 
 export default function AuthPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>("method"); const [email,setEmail]=useState(""); const [password,setPassword]=useState(""); const [confirm,setConfirm]=useState("");
-  const [countryCode,setCountryCode]=useState("TG"); const [phoneLocal,setPhoneLocal]=useState(""); const [phoneE164,setPhoneE164]=useState(""); const [otp,setOtp]=useState(""); const [fullName,setFullName]=useState(""); const [role,setRole]=useState<"client"|"seller">("client"); const [message,setMessage]=useState(""); const [busy,setBusy]=useState(false);
+  const [countryCode,setCountryCode]=useState("TG"); const [phoneLocal,setPhoneLocal]=useState(""); const [phoneE164,setPhoneE164]=useState(""); const [otp,setOtp]=useState(""); const [fullName,setFullName]=useState(""); const [role,setRole]=useState<"client"|"seller">("client"); const [message,setMessage]=useState(""); const [busy,setBusy]=useState(false); const [oauthMode,setOauthMode]=useState(false);
   const country=useMemo(()=>SAFE_PAY_COUNTRIES.find(c=>c.code===countryCode)??SAFE_PAY_COUNTRIES[0],[countryCode]);
+
+  useEffect(()=>{
+    let active=true;
+    async function resumeOAuth(){
+      if(searchParams.get("error")){setMessage(searchParams.get("error")||"Échec de l’authentification Google.");return;}
+      if(searchParams.get("oauth")!=="1")return;
+      const s=createClient(); const {data:{user},error}=await s.auth.getUser();
+      if(!active)return;
+      if(error||!user){setMessage(error?.message||"La session Google n’a pas pu être récupérée.");return;}
+      setEmail(user.email||""); setOauthMode(true); setStep("password");
+      setMessage("Compte Google connecté. Créez maintenant votre mot de passe SafePay.");
+    }
+    resumeOAuth(); return()=>{active=false};
+  },[searchParams]);
+
   function back(){const p:Record<Step,Step>={method:"method",password:"method",emailVerify:"password",phone:"emailVerify",otp:"phone",profile:"otp"};setMessage("");setStep(p[step]);}
   async function continueWithGoogle(){setBusy(true);setMessage("");const s=createClient();const {error}=await s.auth.signInWithOAuth({provider:"google",options:{redirectTo:`${window.location.origin}/auth/callback`}});if(error)setMessage(error.message);setBusy(false);}
   async function submitEmail(e:FormEvent){e.preventDefault();setMessage("");if(!/^\S+@\S+\.\S+$/.test(email))return setMessage("Entrez une adresse email valide.");setStep("password");}
-  async function submitPassword(e:FormEvent){e.preventDefault();setMessage("");if(password.length<8)return setMessage("Le mot de passe doit respecter les règles de sécurité SafePay.");if(password!==confirm)return setMessage("Les deux mots de passe ne correspondent pas.");setBusy(true);const s=createClient();const {error}=await s.auth.signUp({email,password});setBusy(false);if(error)return setMessage(error.message);setStep("emailVerify");setMessage("Un email de vérification a été envoyé. Le téléphone reste verrouillé tant que l’email n’est pas vérifié.");}
+  async function submitPassword(e:FormEvent){e.preventDefault();setMessage("");if(password.length<8)return setMessage("Le mot de passe doit respecter les règles de sécurité SafePay.");if(password!==confirm)return setMessage("Les deux mots de passe ne correspondent pas.");setBusy(true);const s=createClient();let error;
+    if(oauthMode){({error}=await s.auth.updateUser({password}));}
+    else{({error}=await s.auth.signUp({email,password}));}
+    setBusy(false);if(error)return setMessage(error.message);setStep(oauthMode?"phone":"emailVerify");setMessage(oauthMode?"Mot de passe SafePay créé. Vous pouvez maintenant vérifier votre téléphone.":"Un email de vérification a été envoyé. Le téléphone reste verrouillé tant que l’email n’est pas vérifié.");}
   async function confirmEmailVerification(){setBusy(true);setMessage("");const s=createClient();const {data:{user},error}=await s.auth.getUser();setBusy(false);if(error||!user)return setMessage("Session non disponible. Ouvrez le lien reçu par email puis revenez ici.");if(!user.email_confirmed_at)return setMessage("Votre adresse email n’est pas encore vérifiée.");setEmail(user.email??email);setStep("phone");}
   async function submitPhone(e:FormEvent){e.preventDefault();setMessage("");const r=validatePhone(country.code,phoneLocal);if(!r.valid)return setMessage(r.reason);setBusy(true);const s=createClient();const {data:{session}}=await s.auth.getSession();if(!session){setBusy(false);return setMessage("Session expirée. Reconnectez-vous pour continuer.");}const {data,error}=await s.functions.invoke("phone-otp",{body:{action:"send",phone:r.e164}});setBusy(false);if(error||data?.error)return setMessage(data?.error||error?.message||"Impossible d’envoyer le code.");setPhoneE164(r.e164);setOtp("");setStep("otp");setMessage("Code envoyé par SMS. Il expire dans 5 minutes.");}
   async function submitOtp(e:FormEvent){e.preventDefault();setMessage("");if(!/^\d{6}$/.test(otp))return setMessage("Entrez le code à 6 chiffres reçu par SMS.");setBusy(true);const s=createClient();const {data,error}=await s.functions.invoke("phone-otp",{body:{action:"verify",phone:phoneE164,code:otp}});setBusy(false);if(error||data?.error)return setMessage(data?.error||error?.message||"Code incorrect.");setStep("profile");setMessage("Téléphone vérifié. Vous pouvez maintenant créer votre profil SafePay.");}
