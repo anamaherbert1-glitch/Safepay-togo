@@ -20,8 +20,9 @@ export async function GET(request: Request) {
         },
       }
     );
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) return NextResponse.redirect(new URL(`/auth?error=${encodeURIComponent(error.message)}`, requestUrl.origin));
   }
 
-  return NextResponse.redirect(new URL("/auth", requestUrl.origin));
+  return NextResponse.redirect(new URL("/auth?oauth=1", requestUrl.origin));
 }
