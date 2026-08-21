@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -29,11 +30,14 @@ export default function Home() {
       <section style={{ paddingTop: 48 }}>
         <div className="safepay-card" style={{ padding: 22 }}>
           <div style={{ color: "var(--sp-muted)", fontSize: 13 }}>SafePay V5</div>
-          <h1 style={{ margin: "8px 0", fontSize: 30 }}>Migration Next.js</h1>
+          <h1 style={{ margin: "8px 0", fontSize: 30 }}>Bienvenue sur SafePay</h1>
           <p style={{ color: "var(--sp-muted)", lineHeight: 1.5 }}>
-            Le socle Next.js + TypeScript est maintenant en place. Le frontend V5 sera migré progressivement sans reconstruire le backend Supabase.
+            Le socle V5 est conservé. L’authentification et les données réelles Supabase sont branchées progressivement sans reconstruire le backend.
           </p>
-          <button className="safepay-primary" onClick={checkSupabase}>
+          <Link href="/auth" className="safepay-primary" style={{ display: "block", textAlign: "center", textDecoration: "none", marginTop: 14 }}>
+            Créer un compte
+          </Link>
+          <button className="safepay-primary" onClick={checkSupabase} style={{ width: "100%", marginTop: 10 }}>
             Vérifier Supabase
           </button>
           {message && <p style={{ marginTop: 14, fontSize: 13 }}>{message}</p>}
