@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
-  const oauth = requestUrl.searchParams.get("oauth") === "1";
+  const oauthMode = requestUrl.searchParams.get("oauth");
   const email = requestUrl.searchParams.get("email") === "verified";
 
   if (code) {
@@ -25,6 +25,7 @@ export async function GET(request: Request) {
   }
 
   if (email) return NextResponse.redirect(new URL("/auth?email=verified", requestUrl.origin));
-  if (oauth) return NextResponse.redirect(new URL("/auth?oauth=1", requestUrl.origin));
+  if (oauthMode === "login") return NextResponse.redirect(new URL("/dashboard", requestUrl.origin));
+  if (oauthMode === "1") return NextResponse.redirect(new URL("/auth?oauth=1", requestUrl.origin));
   return NextResponse.redirect(new URL("/auth", requestUrl.origin));
 }
