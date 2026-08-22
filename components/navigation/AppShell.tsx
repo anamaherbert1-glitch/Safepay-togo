@@ -17,10 +17,7 @@ const items = [
 ];
 
 function withTimeout<T>(promise: PromiseLike<T>, ms = 10000): Promise<T> {
-  return Promise.race([
-    Promise.resolve(promise),
-    new Promise<T>((_, reject) => setTimeout(() => reject(new Error("Chargement trop long.")), ms)),
-  ]);
+  return Promise.race([Promise.resolve(promise), new Promise<T>((_, reject) => setTimeout(() => reject(new Error("Chargement trop long.")), ms))]);
 }
 
 function fallbackPath(pathname: string) {
@@ -35,6 +32,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [checking, setChecking] = useState(true);
+  const [authorized, setAuthorized] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [navigating, setNavigating] = useState(false);
 
@@ -42,15 +40,17 @@ export function AppShell({ children }: { children: ReactNode }) {
     let active = true;
     const supabase = createClient();
     const load = async () => {
+      setChecking(true); setAuthorized(false);
       try {
-        const { data: { user } } = await withTimeout(supabase.auth.getUser());
+        const { data: { user }, error: userError } = await withTimeout(supabase.auth.getUser());
         if (!active) return;
-        if (!user) { router.replace("/login"); return; }
+        if (userError || !user) { router.replace("/login"); return; }
         if (!user.email_confirmed_at || !user.phone_confirmed_at) { router.replace("/auth?resume=1"); return; }
         const { data: profile } = await withTimeout(supabase.rpc("get_my_profile"));
         if (!active) return;
         if (!profile || !profile.full_name || !profile.phone_verified) { router.replace("/auth?resume=1"); return; }
         setAvatarUrl(profile.avatar_url || "");
+        setAuthorized(true);
       } catch {
         if (active) router.replace("/login");
       } finally {
@@ -59,7 +59,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     };
     load();
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) router.replace("/login");
+      if (!session) { setAuthorized(false); router.replace("/login"); }
     });
     const onAvatarUpdated = (event: Event) => {
       const custom = event as CustomEvent<{ url?: string }>;
@@ -89,13 +89,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   function navigate(href: string) {
     if (href === pathname || navigating) return;
     setNavigating(true);
-    // Bottom navigation is a section switch, not a new history entry.
-    // This prevents repeated taps from creating a confusing Back stack.
     router.replace(href);
     window.setTimeout(() => setNavigating(false), 500);
   }
 
-  if (checking) return <div className="safepay-shell safepay-dashboard"><div className="sp-page-loading" role="status"><span className="sp-loader"/>Chargement de SafePay…</div></div>;
+  if (checking || !authorized) return <div className="safepay-shell safepay-dashboard"><div className="sp-page-loading" role="status"><span className="sp-loader"/>Chargement de SafePay…</div></div>;
 
   return <div className="safepay-shell safepay-dashboard">
     <header className="sp-header">
@@ -109,9 +107,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         const isProfile = item.href === "/profile";
         const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`));
         return <button key={item.href} className={active ? "active" : ""} onClick={() => navigate(item.href)} disabled={navigating} aria-current={active ? "page" : undefined}>
-          <span className={isProfile ? "sp-nav-profile-icon" : ""} aria-hidden="true">
-            {isProfile && avatarUrl ? <img src={avatarUrl} alt="" onError={() => setAvatarUrl("")}/> : item.icon}
-          </span>
+          <span className={isProfile ? "sp-nav-profile-icon" : ""} aria-hidden="true">{isProfile && avatarUrl ? <img src={avatarUrl} alt="" onError={() => setAvatarUrl("")}/> : item.icon}</span>
           <small>{item.label}</small>
         </button>;
       })}
