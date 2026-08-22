@@ -77,6 +77,7 @@ export default function LoginPage() {
       const { error: otpError } = await withTimeout(s.auth.signInWithOtp({ phone: result.e164, options: { shouldCreateUser: false } }));
       if (otpError) { notice(friendlyAuthError(otpError.message), "error"); return; }
       setPhoneE164(result.e164); setOtp(""); setOtpSent(true);
+      notice("Code OTP envoyé. Entrez le code reçu pour vous connecter.", "success");
     } catch (err) { notice(friendlyAuthError(err instanceof Error ? err.message : "Impossible d’envoyer le code OTP."), "error"); }
     finally { setBusy(false); }
   }
@@ -94,7 +95,7 @@ export default function LoginPage() {
       const { data, error: bootstrapError } = await withTimeout(s.rpc("bootstrap_user_account"));
       if (bootstrapError || !data?.onboarding_complete) {
         await s.auth.signOut();
-        notice("Ce compte n’a pas terminé son inscription. SafePay ne donne pas accès au tableau de bord tant que l’email, le téléphone et le profil ne sont pas finalisés.", "error");
+        notice("Ce compte n’a pas terminé son inscription. Terminez d’abord la vérification du téléphone et du profil.", "error");
         return;
       }
       router.replace("/dashboard");
@@ -102,9 +103,9 @@ export default function LoginPage() {
     finally { setBusy(false); }
   }
 
-  return <main className="safepay-shell auth-screen"><header className="auth-header"><button className="safepay-icon" onClick={() => router.replace("/")} aria-label="Retour">←</button><strong>SafePay</strong><span/></header><section className="auth-content"><div className="safepay-card auth-card"><div className="auth-kicker">SafePay V5</div><h1>Se connecter</h1><p className="sp-muted">La connexion SafePay se fait par numéro de téléphone + OTP. Aucun mot de passe email n’est demandé ici.</p>
+  return <main className="safepay-shell auth-screen"><header className="auth-header"><button className="safepay-icon" onClick={() => router.replace("/")} aria-label="Retour">←</button><strong>SafePay</strong><span/></header><section className="auth-content"><div className="safepay-card auth-card"><div className="auth-kicker">SafePay V5</div><h1>Se connecter</h1><p className="sp-muted">La connexion SafePay se fait uniquement avec votre numéro de téléphone et un OTP sécurisé.</p>
     <form onSubmit={otpSent ? verifyPhoneOtp : sendPhoneOtp} className="sp-form"><label>Numéro de téléphone<div className="phone-row"><select value={countryCode} onChange={e => { setCountryCode(e.target.value); setOtpSent(false); setOtp(""); clearNotice(); }} aria-label="Pays">{SAFE_PAY_COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.flag} {c.callingCode}</option>)}</select><input value={phoneLocal} onChange={e => setPhoneLocal(onlyPhoneCharacters(e.target.value))} placeholder="90 XX XX XX" inputMode="tel" autoComplete="tel" required /></div></label><div className="phone-country-meta">{country.flag} {country.callingCode} · {country.name} · {country.currency}</div>{otpSent && <label>Code OTP<span className="sp-code-wrap"><input value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ""))} maxLength={6} inputMode="numeric" autoComplete="one-time-code" placeholder="000000" type={otpVisible ? "text" : "password"} required/><button type="button" className="sp-code-toggle" onClick={() => setOtpVisible(v => !v)} aria-label={otpVisible ? "Masquer le code" : "Afficher le code"} title={otpVisible ? "Masquer le code" : "Afficher le code"}><EyeIcon hidden={!otpVisible}/></button></span></label>}<button className="safepay-primary" disabled={busy}>{busy ? (otpSent ? "Vérification…" : "Envoi…") : (otpSent ? "Vérifier le code" : "Envoyer le code")}</button></form>
-    {message && noticeKind === "error" && <p className="sp-form-message sp-form-message-error" role="alert">{message}</p>}
+    {message && <p className={`sp-form-message sp-form-message-${noticeKind}`} role={noticeKind === "error" ? "alert" : "status"}>{message}</p>}
     <p className="auth-footer">Pas encore de compte ? <button type="button" onClick={() => router.push("/auth")}>Créer un compte</button></p>
   </div></section></main>;
 }
