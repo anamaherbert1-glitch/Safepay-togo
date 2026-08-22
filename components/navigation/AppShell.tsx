@@ -13,6 +13,7 @@ const items = [
   { href: "/dashboard", label: "Accueil", icon: <HomeIcon /> },
   { href: "/transactions", label: "Transactions", icon: <TransactionsIcon /> },
   { href: "/notifications", label: "Notifications", icon: <NotificationsIcon /> },
+  { href: "/profile", label: "Profil", icon: <ProfileIcon /> },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -69,15 +70,19 @@ export function AppShell({ children }: { children: ReactNode }) {
     <header className="sp-header">
       {pathname !== "/dashboard" ? <button className="sp-back" onClick={goBack} aria-label="Retour">←</button> : <span className="sp-header-spacer" aria-hidden="true"/>}
       <button className="sp-brand" onClick={() => router.replace("/dashboard")} aria-label="Accueil SafePay">SafePay</button>
-      <button className={`sp-profile-trigger${pathname === "/profile" ? " active" : ""}`} aria-label="Profil" onClick={() => router.push("/profile")}>
-        {avatarUrl ? <img src={avatarUrl} alt=""/> : <ProfileIcon/>}
-      </button>
+      <span className="sp-header-spacer" aria-hidden="true"/>
     </header>
 
     <main className="sp-content">{children}</main>
 
     <nav className="sp-bottom-nav" aria-label="Navigation principale">
-      {items.map(item => <button key={item.href} className={pathname === item.href ? "active" : ""} onClick={() => router.push(item.href)} aria-current={pathname === item.href ? "page" : undefined}><span aria-hidden="true">{item.icon}</span><small>{item.label}</small></button>)}
+      {items.map(item => {
+        const isProfile = item.href === "/profile";
+        return <button key={item.href} className={pathname === item.href ? "active" : ""} onClick={() => router.push(item.href)} aria-current={pathname === item.href ? "page" : undefined}>
+          <span className={isProfile ? "sp-nav-profile-icon" : ""} aria-hidden="true">{isProfile && avatarUrl ? <img src={avatarUrl} alt=""/> : item.icon}</span>
+          <small>{item.label}</small>
+        </button>;
+      })}
     </nav>
   </div>;
 }
