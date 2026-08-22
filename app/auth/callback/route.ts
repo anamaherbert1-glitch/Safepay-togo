@@ -6,7 +6,14 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const oauthMode = requestUrl.searchParams.get("oauth");
-  const email = requestUrl.searchParams.get("email") === "verified";
+  const emailVerified = requestUrl.searchParams.get("email") === "verified";
+  const error = requestUrl.searchParams.get("error");
+  const errorDescription = requestUrl.searchParams.get("error_description");
+
+  if (error || errorDescription) {
+    const message = errorDescription || error || "Authentification impossible.";
+    return NextResponse.redirect(new URL(`/auth?error=${encodeURIComponent(message)}`, requestUrl.origin));
+  }
 
   if (code) {
     const cookieStore = await cookies();
@@ -20,11 +27,13 @@ export async function GET(request: Request) {
         },
       }
     );
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) return NextResponse.redirect(new URL(`/auth?error=${encodeURIComponent(error.message)}`, requestUrl.origin));
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+    if (exchangeError) {
+      return NextResponse.redirect(new URL(`/auth?error=${encodeURIComponent(exchangeError.message)}`, requestUrl.origin));
+    }
   }
 
-  if (email) return NextResponse.redirect(new URL("/auth?email=verified", requestUrl.origin));
+  if (emailVerified) return NextResponse.redirect(new URL("/auth?email=verified", requestUrl.origin));
   if (oauthMode === "login") return NextResponse.redirect(new URL("/dashboard", requestUrl.origin));
   if (oauthMode === "1") return NextResponse.redirect(new URL("/auth?oauth=1", requestUrl.origin));
   return NextResponse.redirect(new URL("/auth", requestUrl.origin));
