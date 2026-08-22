@@ -16,4 +16,7 @@ SafePay V5 is the master product version. This repository is the migration targe
 - Profile uses a person/head icon inside a circle, with the same color, size and alignment system as other SafePay icons; no special blue/purple background.
 
 ## Current phase
-Initial Next.js/TypeScript migration scaffold. The existing V5 HTML remains the UI reference while real Supabase integration replaces local state progressively.
+V5 migration with real Supabase-backed profile, wallet, transaction, notification, support, feedback and admin configuration flows.
+
+## CI validation
+Temporary branch used to verify that the Next.js application builds without type-checking the Deno Edge Functions.
