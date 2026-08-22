@@ -29,18 +29,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!active) return;
       if (!user) { router.replace("/login"); return; }
-
-      if (!user.email_confirmed_at || !user.phone_confirmed_at) {
-        router.replace("/auth?resume=1");
-        return;
-      }
+      if (!user.email_confirmed_at || !user.phone_confirmed_at) { router.replace("/auth?resume=1"); return; }
 
       const { data: profile } = await supabase.rpc("get_my_profile");
       if (!active) return;
-      if (!profile || !profile.full_name || !profile.phone_verified) {
-        router.replace("/auth?resume=1");
-        return;
-      }
+      if (!profile || !profile.full_name || !profile.phone_verified) { router.replace("/auth?resume=1"); return; }
 
       setAvatarUrl(profile.avatar_url || "");
       setChecking(false);
@@ -51,9 +44,16 @@ export function AppShell({ children }: { children: ReactNode }) {
       if (!session) router.replace("/login");
     });
 
+    const onAvatarUpdated = (event: Event) => {
+      const custom = event as CustomEvent<{ url?: string }>;
+      if (custom.detail?.url) setAvatarUrl(custom.detail.url);
+    };
+    window.addEventListener("safepay-avatar-updated", onAvatarUpdated);
+
     return () => {
       active = false;
       listener.subscription.unsubscribe();
+      window.removeEventListener("safepay-avatar-updated", onAvatarUpdated);
     };
   }, [router]);
 
