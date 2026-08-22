@@ -1,0 +1,1 @@
+Temporary CI verification marker for SafePay V5 fixes. This file can be removed after the build check.
