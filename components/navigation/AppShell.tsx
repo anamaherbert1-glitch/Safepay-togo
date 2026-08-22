@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { IconButton } from "@/components/ui/IconButton";
+import { createClient } from "@/lib/supabase/client";
 
 function HomeIcon() { return <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 10.5 12 3l8.5 7.5"/><path d="M5.5 9.5v10h13v-10M9.5 19.5v-6h5v6"/></svg>; }
 function TransactionsIcon() { return <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 7h11"/><path d="m14 4 3 3-3 3"/><path d="M18 17H7"/><path d="m10 14-3 3 3 3"/></svg>; }
@@ -19,24 +19,35 @@ const items = [
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [modalOpen, setModalOpen] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const onPopState = () => setModalOpen(false);
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+    let active = true;
+    const supabase = createClient();
+    const loadSession = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!active) return;
+      if (!user) { router.replace("/login"); return; }
+      if (!user.email_confirmed_at || !user.phone_confirmed_at) { router.replace("/auth?resume=1"); return; }
+      const { data: profile } = await supabase.rpc("get_my_profile");
+      if (!active) return;
+      if (!profile || !profile.full_name || !profile.phone_verified) { router.replace("/auth?resume=1"); return; }
+      setChecking(false);
+    };
+    loadSession();
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) router.replace("/login");
+    });
+    return () => { active = false; listener.subscription.unsubscribe(); };
+  }, [router]);
 
   function goBack() {
-    if (modalOpen) {
-      setModalOpen(false);
-      return;
-    }
-    if (window.history.length > 1) {
-      router.back();
-      return;
-    }
-    router.push("/dashboard");
+    if (window.history.length > 1) router.back();
+    else router.push("/dashboard");
+  }
+
+  if (checking) {
+    return <div className="safepay-shell safepay-dashboard"><div className="sp-page-loading" role="status"><span className="sp-loader"/>Chargement de SafePay…</div></div>;
   }
 
   return (
@@ -44,7 +55,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="sp-header">
         <button className="sp-back" onClick={goBack} aria-label="Retour">←</button>
         <button className="sp-brand" onClick={() => router.push("/dashboard")} aria-label="Accueil SafePay">SafePay</button>
-        <IconButton label="Profil" active={pathname === "/profile"} onClick={() => router.push("/profile")}><ProfileIcon /></IconButton>
+        <button className={`sp-profile-trigger${pathname === "/profile" ? " active" : ""}`} aria-label="Profil" title="Profil" onClick={() => router.push("/profile")}><ProfileIcon /></button>
       </header>
       <main className="sp-content">{children}</main>
       <nav className="sp-bottom-nav" aria-label="Navigation principale">
@@ -54,14 +65,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
         ))}
       </nav>
-      {modalOpen && (
-        <div className="sp-modal-backdrop" role="presentation">
-          <section className="sp-modal" role="dialog" aria-modal="true" aria-label="Fenêtre SafePay">
-            <button type="button" className="sp-modal-back" onClick={() => setModalOpen(false)}>← Retour</button>
-            <div>Fenêtre SafePay</div>
-          </section>
-        </div>
-      )}
     </div>
   );
 }
