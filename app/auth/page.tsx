@@ -16,9 +16,9 @@ function friendlyAuthError(message: string) {
   return message;
 }
 
-function withTimeout<T>(promise: Promise<T>, ms = 20000) {
+function withTimeout<T>(promise: PromiseLike<T>, ms = 20000): Promise<T> {
   return Promise.race([
-    promise,
+    Promise.resolve(promise),
     new Promise<T>((_, reject) => setTimeout(() => reject(new Error("La demande prend trop de temps. Vérifiez votre connexion Internet puis réessayez.")), ms)),
   ]);
 }
@@ -93,44 +93,17 @@ function AuthPageContent() {
     e.preventDefault(); setMessage("");
     if (password.length < 8) { setMessage("Le mot de passe doit contenir au moins 8 caractères."); return; }
     if (password !== confirm) { setMessage("Les deux mots de passe ne correspondent pas."); return; }
-
-    setBusy(true);
-    setMessage("Création sécurisée de votre compte…");
+    setBusy(true); setMessage("Création sécurisée de votre compte…");
     const s = createClient();
-
     try {
-      const result = oauthMode
-        ? await withTimeout(s.auth.updateUser({ password }))
-        : await withTimeout(s.auth.signUp({
-            email: email.trim(),
-            password,
-            options: { emailRedirectTo: `${window.location.origin}/auth/callback?email=verified` },
-          }));
-
-      if (result.error) {
-        setMessage(friendlyAuthError(result.error.message));
-        return;
-      }
-
-      if (oauthMode) {
-        setPassword(""); setConfirm(""); setStep("phone");
-        setMessage("Mot de passe SafePay créé. Étape suivante : vérification du téléphone par OTP.");
-        return;
-      }
-
+      const result = oauthMode ? await withTimeout(s.auth.updateUser({ password })) : await withTimeout(s.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: `${window.location.origin}/auth/callback?email=verified` } }));
+      if (result.error) { setMessage(friendlyAuthError(result.error.message)); return; }
+      if (oauthMode) { setPassword(""); setConfirm(""); setStep("phone"); setMessage("Mot de passe SafePay créé. Étape suivante : vérification du téléphone par OTP."); return; }
       setPassword(""); setConfirm("");
-      if (result.data?.user?.email_confirmed_at) {
-        setStep("phone");
-        setMessage("Email confirmé. Étape suivante : vérification du téléphone par OTP.");
-      } else {
-        setStep("emailVerify");
-        setMessage("Un email de vérification a été envoyé. Vous devez confirmer votre adresse avant de continuer.");
-      }
-    } catch (err) {
-      setMessage(friendlyAuthError(err instanceof Error ? err.message : "Impossible de créer le compte."));
-    } finally {
-      setBusy(false);
-    }
+      if (result.data?.user?.email_confirmed_at) { setStep("phone"); setMessage("Email confirmé. Étape suivante : vérification du téléphone par OTP."); }
+      else { setStep("emailVerify"); setMessage("Un email de vérification a été envoyé. Vous devez confirmer votre adresse avant de continuer."); }
+    } catch (err) { setMessage(friendlyAuthError(err instanceof Error ? err.message : "Impossible de créer le compte.")); }
+    finally { setBusy(false); }
   }
 
   async function confirmEmailVerification() {
@@ -192,18 +165,15 @@ function AuthPageContent() {
 
   const title = step === "method" ? "Créer votre compte SafePay" : step === "password" ? "Créer votre mot de passe" : step === "emailVerify" ? "Vérifier votre email" : step === "phone" ? "Votre numéro de téléphone" : step === "otp" ? "Vérifier votre téléphone" : "Votre profil";
 
-  return <main className="safepay-shell auth-screen">
-    <header className="auth-header">{step !== "method" && <button className="safepay-icon" onClick={back} aria-label="Retour">←</button>}<strong>SafePay</strong></header>
-    <section className="auth-content"><div className="safepay-card auth-card"><div className="auth-kicker">SafePay V5</div><h1>{title}</h1>
-      {step === "method" && <><p className="sp-muted">L’inscription commence obligatoirement par l’email ou Google.</p><button disabled={busy} onClick={continueWithGoogle} className="sp-google-button"><GoogleMark/>Continuer avec Google</button><div className="auth-divider">ou</div><form onSubmit={submitEmail} className="sp-form"><label>Email<input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="vous@exemple.com" autoComplete="email"/></label><button className="safepay-primary" disabled={busy}>Continuer</button></form></>}
-      {step === "password" && <form onSubmit={submitPassword} className="sp-form"><p className="sp-muted">Compte : {email}</p><label>Mot de passe<input required type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password"/></label><label>Confirmer<input required type="password" value={confirm} onChange={e => setConfirm(e.target.value)} autoComplete="new-password"/></label><button className="safepay-primary" disabled={busy}>{busy ? "Création…" : "Créer le compte"}</button></form>}
-      {step === "emailVerify" && <div><p>Vérifiez votre boîte email et cliquez sur le lien envoyé par Supabase. Vous devez terminer cette étape avant de passer au téléphone.</p><button className="safepay-primary" onClick={confirmEmailVerification} disabled={busy}>{busy ? "Vérification…" : "J’ai vérifié mon email"}</button></div>}
-      {step === "phone" && <form onSubmit={submitPhone} className="sp-form"><label>Numéro de téléphone<div className="phone-row"><select value={countryCode} onChange={e => setCountryCode(e.target.value)} aria-label="Pays">{SAFE_PAY_COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.flag} {c.callingCode}</option>)}</select><input value={phoneLocal} onChange={e => setPhoneLocal(onlyPhoneCharacters(e.target.value))} placeholder="90 XX XX XX" inputMode="tel" autoComplete="tel" required/></div></label><div className="phone-country-meta">{country.flag} {country.callingCode} · {country.name} · {country.currency}</div><button className="safepay-primary" disabled={busy}>{busy ? "Envoi…" : "Envoyer le code"}</button></form>}
-      {step === "otp" && <form onSubmit={submitOtp} className="sp-form"><p>Un code à 6 chiffres a été envoyé à {phoneE164}.</p><input required inputMode="numeric" maxLength={6} value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ""))} placeholder="000000" autoComplete="one-time-code"/><button className="safepay-primary" disabled={busy}>{busy ? "Vérification…" : "Vérifier le numéro"}</button></form>}
-      {step === "profile" && <form onSubmit={submitProfile} className="sp-form"><p className="sp-muted">Téléphone vérifié : {phoneE164 || "votre numéro vérifié"}</p><label>Nom complet<input required value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Nom et prénom" autoComplete="name"/></label><label>Type de compte<select value={role} onChange={e => setRole(e.target.value as "client" | "seller")}><option value="client">Client</option><option value="seller">Vendeur</option></select></label><button className="safepay-primary" disabled={busy}>{busy ? "Finalisation…" : "Finaliser mon compte"}</button></form>}
-      {message && <p className="sp-form-error" role="status">{message}</p>}
-    </div></section>
-  </main>;
+  return <main className="safepay-shell auth-screen"><header className="auth-header">{step !== "method" && <button className="safepay-icon" onClick={back} aria-label="Retour">←</button>}<strong>SafePay</strong></header><section className="auth-content"><div className="safepay-card auth-card"><div className="auth-kicker">SafePay V5</div><h1>{title}</h1>
+  {step === "method" && <><p className="sp-muted">L’inscription commence obligatoirement par l’email ou Google.</p><button disabled={busy} onClick={continueWithGoogle} className="sp-google-button"><GoogleMark/>Continuer avec Google</button><div className="auth-divider">ou</div><form onSubmit={submitEmail} className="sp-form"><label>Email<input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="vous@exemple.com" autoComplete="email"/></label><button className="safepay-primary" disabled={busy}>Continuer</button></form></>}
+  {step === "password" && <form onSubmit={submitPassword} className="sp-form"><p className="sp-muted">Compte : {email}</p><label>Mot de passe<input required type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password"/></label><label>Confirmer<input required type="password" value={confirm} onChange={e => setConfirm(e.target.value)} autoComplete="new-password"/></label><button className="safepay-primary" disabled={busy}>{busy ? "Création…" : "Créer le compte"}</button></form>}
+  {step === "emailVerify" && <div><p>Vérifiez votre boîte email et cliquez sur le lien envoyé par Supabase. Vous devez terminer cette étape avant de passer au téléphone.</p><button className="safepay-primary" onClick={confirmEmailVerification} disabled={busy}>{busy ? "Vérification…" : "J’ai vérifié mon email"}</button></div>}
+  {step === "phone" && <form onSubmit={submitPhone} className="sp-form"><label>Numéro de téléphone<div className="phone-row"><select value={countryCode} onChange={e => setCountryCode(e.target.value)} aria-label="Pays">{SAFE_PAY_COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.flag} {c.callingCode}</option>)}</select><input value={phoneLocal} onChange={e => setPhoneLocal(onlyPhoneCharacters(e.target.value))} placeholder="90 XX XX XX" inputMode="tel" autoComplete="tel" required/></div></label><div className="phone-country-meta">{country.flag} {country.callingCode} · {country.name} · {country.currency}</div><button className="safepay-primary" disabled={busy}>{busy ? "Envoi…" : "Envoyer le code"}</button></form>}
+  {step === "otp" && <form onSubmit={submitOtp} className="sp-form"><p>Un code à 6 chiffres a été envoyé à {phoneE164}.</p><input required inputMode="numeric" maxLength={6} value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ""))} placeholder="000000" autoComplete="one-time-code"/><button className="safepay-primary" disabled={busy}>{busy ? "Vérification…" : "Vérifier le numéro"}</button></form>}
+  {step === "profile" && <form onSubmit={submitProfile} className="sp-form"><p className="sp-muted">Téléphone vérifié : {phoneE164 || "votre numéro vérifié"}</p><label>Nom complet<input required value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Nom et prénom" autoComplete="name"/></label><label>Type de compte<select value={role} onChange={e => setRole(e.target.value as "client" | "seller")}><option value="client">Client</option><option value="seller">Vendeur</option></select></label><button className="safepay-primary" disabled={busy}>{busy ? "Finalisation…" : "Finaliser mon compte"}</button></form>}
+  {message && <p className="sp-form-error" role="status">{message}</p>}
+</div></section></main>;
 }
 
 export default function AuthPage() { return <Suspense fallback={<main className="safepay-shell auth-screen"><div className="sp-page-loading"><span className="sp-loader"/>Chargement…</div></main>}><AuthPageContent/></Suspense>; }
