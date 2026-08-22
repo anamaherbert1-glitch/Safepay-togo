@@ -16,13 +16,27 @@ const items = [
   { href: "/profile", label: "Profil", icon: <ProfileIcon /> },
 ];
 
-function withTimeout<T>(promise: PromiseLike<T>, ms = 10000): Promise<T> { return Promise.race([Promise.resolve(promise), new Promise<T>((_, reject) => setTimeout(() => reject(new Error("Chargement trop long.")), ms))]); }
+function withTimeout<T>(promise: PromiseLike<T>, ms = 10000): Promise<T> {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error("Chargement trop long.")), ms)),
+  ]);
+}
+
+function fallbackPath(pathname: string) {
+  if (pathname.startsWith("/transactions/")) return "/transactions";
+  if (pathname.startsWith("/wallet/")) return "/wallet";
+  if (pathname.startsWith("/services/")) return "/services";
+  if (pathname.startsWith("/support/")) return "/support";
+  return "/dashboard";
+}
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [checking, setChecking] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [navigating, setNavigating] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -44,28 +58,63 @@ export function AppShell({ children }: { children: ReactNode }) {
       }
     };
     load();
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => { if (!session) router.replace("/login"); });
-    const onAvatarUpdated = (event: Event) => { const custom = event as CustomEvent<{ url?: string }>; setAvatarUrl(custom.detail?.url || ""); };
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) router.replace("/login");
+    });
+    const onAvatarUpdated = (event: Event) => {
+      const custom = event as CustomEvent<{ url?: string }>;
+      setAvatarUrl(custom.detail?.url || "");
+    };
     window.addEventListener("safepay-avatar-updated", onAvatarUpdated);
-    return () => { active = false; listener.subscription.unsubscribe(); window.removeEventListener("safepay-avatar-updated", onAvatarUpdated); };
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+      window.removeEventListener("safepay-avatar-updated", onAvatarUpdated);
+    };
   }, [router]);
 
-  function goBack() { if (pathname === "/dashboard") return; router.back(); }
-  function navigate(href: string) { if (href !== pathname) router.push(href); }
+  function goBack() {
+    if (navigating) return;
+    if (pathname === "/dashboard") return;
+    setNavigating(true);
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      window.setTimeout(() => setNavigating(false), 500);
+      return;
+    }
+    router.replace(fallbackPath(pathname));
+    window.setTimeout(() => setNavigating(false), 500);
+  }
+
+  function navigate(href: string) {
+    if (href === pathname || navigating) return;
+    setNavigating(true);
+    // Bottom navigation is a section switch, not a new history entry.
+    // This prevents repeated taps from creating a confusing Back stack.
+    router.replace(href);
+    window.setTimeout(() => setNavigating(false), 500);
+  }
 
   if (checking) return <div className="safepay-shell safepay-dashboard"><div className="sp-page-loading" role="status"><span className="sp-loader"/>Chargement de SafePay…</div></div>;
 
   return <div className="safepay-shell safepay-dashboard">
     <header className="sp-header">
-      {pathname !== "/dashboard" ? <button className="sp-back" onClick={goBack} aria-label="Retour">←</button> : <span className="sp-header-spacer" aria-hidden="true"/>}
+      {pathname !== "/dashboard" ? <button className="sp-back" onClick={goBack} disabled={navigating} aria-label="Retour">←</button> : <span className="sp-header-spacer" aria-hidden="true"/>}
       <button className="sp-brand" onClick={() => navigate("/dashboard")} aria-label="Accueil SafePay">SafePay</button>
       <span className="sp-header-spacer" aria-hidden="true"/>
     </header>
     <main className="sp-content">{children}</main>
     <nav className="sp-bottom-nav" aria-label="Navigation principale">
-      {items.map(item => { const isProfile = item.href === "/profile"; return <button key={item.href} className={pathname === item.href ? "active" : ""} onClick={() => navigate(item.href)} aria-current={pathname === item.href ? "page" : undefined}>
-        <span className={isProfile ? "sp-nav-profile-icon" : ""} aria-hidden="true">{isProfile && avatarUrl ? <img src={avatarUrl} alt="" onError={() => setAvatarUrl("")}/> : item.icon}</span><small>{item.label}</small>
-      </button>; })}
+      {items.map(item => {
+        const isProfile = item.href === "/profile";
+        const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`));
+        return <button key={item.href} className={active ? "active" : ""} onClick={() => navigate(item.href)} disabled={navigating} aria-current={active ? "page" : undefined}>
+          <span className={isProfile ? "sp-nav-profile-icon" : ""} aria-hidden="true">
+            {isProfile && avatarUrl ? <img src={avatarUrl} alt="" onError={() => setAvatarUrl("")}/> : item.icon}
+          </span>
+          <small>{item.label}</small>
+        </button>;
+      })}
     </nav>
   </div>;
 }
