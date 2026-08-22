@@ -1,1 +1,0 @@
-Temporary build verification for the current SafePay V5 code. Not part of the production feature set.
