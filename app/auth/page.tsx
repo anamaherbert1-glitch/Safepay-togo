@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { SAFE_PAY_COUNTRIES, onlyPhoneCharacters, validatePhone } from "@/lib/phone";
@@ -8,7 +8,7 @@ import { SAFE_PAY_COUNTRIES, onlyPhoneCharacters, validatePhone } from "@/lib/ph
 function GoogleMark() { return <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.35 12.27c0-.73-.07-1.43-.2-2.09H12v3.96h5.23a4.47 4.47 0 0 1-1.94 2.94v2.45h3.14c1.84-1.7 2.92-4.2 2.92-7.26Z"/><path fill="#34A853" d="M12 21.82c2.63 0 4.84-.87 6.45-2.35l-3.14-2.45c-.87.58-1.98.92-3.31.92-2.54 0-4.69-1.72-5.46-4.03H3.3v2.53A9.74 9.74 0 0 0 12 21.82Z"/><path fill="#FBBC05" d="M6.54 13.91A5.86 5.86 0 0 1 6.23 12c0-.66.11-1.3.31-1.91V7.56H3.3A9.82 9.82 0 0 0 2.18 12c0 1.6.38 3.11 1.12 4.44l3.24-2.53Z"/><path fill="#EA4335" d="M12 6.06c1.43 0 2.71.49 3.72 1.46l2.79-2.79C16.84 3.16 14.63 2.18 12 2.18a9.74 9.74 0 0 0-8.7 5.38l3.24 2.53C7.31 7.78 9.46 6.06 12 6.06Z"/></svg>; }
 type Step = "method" | "password" | "emailVerify" | "phone" | "otp" | "profile";
 
-export default function AuthPage() {
+function AuthPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>("method");
@@ -137,4 +137,8 @@ export default function AuthPage() {
   {step === "otp" && <form onSubmit={submitOtp}><p>Un code à 6 chiffres a été envoyé à {phoneE164}.</p><input required inputMode="numeric" maxLength={6} value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ""))} placeholder="000000" style={{ width: "100%", padding: 15, fontSize: 24, letterSpacing: 6, textAlign: "center", borderRadius: 12, border: "1px solid var(--sp-line)" }} /><button className="safepay-primary" style={{ width: "100%", marginTop: 14 }} disabled={busy}>{busy ? "Vérification…" : "Vérifier le numéro"}</button></form>}
   {step === "profile" && <form onSubmit={submitProfile}><p style={{ color: "var(--sp-muted)" }}>Téléphone vérifié : {phoneE164}</p><label>Nom complet<input required value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Nom et prénom" style={{ width: "100%", marginTop: 7, padding: 13, borderRadius: 12, border: "1px solid var(--sp-line)" }} /></label><label style={{ display: "block", marginTop: 12 }}>Type de compte<select value={role} onChange={e => setRole(e.target.value as "client" | "seller")} style={{ width: "100%", marginTop: 7, padding: 13, borderRadius: 12, border: "1px solid var(--sp-line)" }}><option value="client">Client</option><option value="seller">Vendeur</option></select></label><button className="safepay-primary" style={{ width: "100%", marginTop: 14 }} disabled={busy}>{busy ? "Finalisation…" : "Finaliser mon compte"}</button></form>}
   {message && <p style={{ marginTop: 14, color: "var(--sp-muted)", fontSize: 13 }} role="status">{message}</p>}</div></section></main>;
+}
+
+export default function AuthPage() {
+  return <Suspense fallback={<main className="safepay-shell" style={{ minHeight: "100vh", padding: 20 }}><p className="sp-muted">Chargement de l’authentification…</p></main>}><AuthPageContent /></Suspense>;
 }
