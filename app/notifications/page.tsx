@@ -24,7 +24,7 @@ export default function NotificationsPage() {
 
   async function markRead(id: string) {
     const supabase = createClient();
-    const { error: updateError } = await supabase.from("notifications").update({ is_read: true }).eq("id", id);
+    const { error: updateError } = await supabase.rpc("mark_notification_read", { p_notification_id: id });
     if (updateError) { setError(updateError.message); return; }
     setItems(current => current.map(item => item.id === id ? { ...item, is_read: true } : item));
   }
