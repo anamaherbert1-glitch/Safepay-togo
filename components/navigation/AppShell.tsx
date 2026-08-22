@@ -10,7 +10,7 @@ function NotificationsIcon() { return <svg viewBox="0 0 24 24" width="21" height
 function ProfileIcon() { return <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="9.2"/><circle cx="12" cy="9" r="2.7"/><path d="M7.2 18c.9-2.6 2.5-3.9 4.8-3.9s3.9 1.3 4.8 3.9"/></svg>; }
 
 const items = [
-  { href: "/", label: "Accueil", icon: <HomeIcon /> },
+  { href: "/dashboard", label: "Accueil", icon: <HomeIcon /> },
   { href: "/transactions", label: "Transactions", icon: <TransactionsIcon /> },
   { href: "/notifications", label: "Notifications", icon: <NotificationsIcon /> },
   { href: "/profile", label: "Profil", icon: <ProfileIcon /> },
@@ -32,15 +32,18 @@ export function AppShell({ children }: { children: ReactNode }) {
       setModalOpen(false);
       return;
     }
-    if (window.history.length > 1) router.back();
-    else router.push("/");
+    if (window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push("/dashboard");
   }
 
   return (
     <div className="safepay-shell safepay-dashboard">
       <header className="sp-header">
         <button className="sp-back" onClick={goBack} aria-label="Retour">←</button>
-        <button className="sp-brand" onClick={() => router.push("/")} aria-label="Accueil SafePay">SafePay</button>
+        <button className="sp-brand" onClick={() => router.push("/dashboard")} aria-label="Accueil SafePay">SafePay</button>
         <IconButton label="Profil" active={pathname === "/profile"} onClick={() => router.push("/profile")}><ProfileIcon /></IconButton>
       </header>
       <main className="sp-content">{children}</main>
