@@ -1,0 +1,18 @@
+/* SafePay V5 visual polish: keeps the existing UI and only refines spacing, decoration and mobile language placement. */
+.auth-screen{background:radial-gradient(circle at 8% 12%,rgba(47,124,255,.16),transparent 27%),radial-gradient(circle at 92% 38%,rgba(122,90,248,.12),transparent 25%),linear-gradient(180deg,#f8faff 0%,#f2f5fb 100%)}
+.auth-header{grid-template-columns:42px 1fr auto!important;gap:10px;padding:0 2px}
+.auth-header .sp-language-switcher{justify-self:end;flex:0 0 auto}
+.auth-content{padding-top:28px;padding-bottom:18px}
+.auth-card{border-radius:24px!important;border-color:rgba(21,94,239,.10)!important;background:rgba(255,255,255,.93)!important;box-shadow:0 22px 55px rgba(16,24,40,.10),0 2px 8px rgba(21,94,239,.05)!important;overflow:hidden}
+.auth-card::before{content:"";display:block;width:58px;height:5px;border-radius:99px;background:linear-gradient(90deg,#2f7cff,#7a5af8);margin:0 auto 16px;opacity:.9}
+.auth-card h1{letter-spacing:-.8px}
+.auth-card .sp-muted{line-height:1.55}
+.phone-row select,.phone-row input,.role-choice button{box-shadow:0 3px 12px rgba(16,24,40,.035)}
+.role-choice button{transition:transform .16s ease,border-color .16s ease,background .16s ease,box-shadow .16s ease}
+.role-choice button:hover{transform:translateY(-1px);box-shadow:0 7px 18px rgba(16,24,40,.07)}
+.auth-footer{position:relative;z-index:2}
+.onboarding-screen{background:radial-gradient(circle at 50% 10%,rgba(47,124,255,.18),transparent 30%),radial-gradient(circle at 15% 75%,rgba(122,90,248,.10),transparent 26%),linear-gradient(180deg,#f9fbff 0%,#f1f5fb 100%)}
+.onboarding-header .sp-language-switcher{margin-left:auto}
+.sp-shell-language{display:none!important}
+@media (max-width:380px){.auth-header{grid-template-columns:40px 1fr auto!important;gap:7px}.auth-header strong{font-size:19px}.auth-header .sp-language-switcher button{padding:6px 7px;font-size:10px}.auth-content{padding-top:20px}.auth-card{padding:18px!important;border-radius:21px!important}}
+@media (prefers-reduced-motion:reduce){.safepay-primary::after,.onboarding-art,.onboarding-copy,.person,.phone-card,.money-token,.transfer-path i,.transfer-path b,.secure-check{animation:none!important}}
