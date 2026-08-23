@@ -45,12 +45,21 @@ export function AppShell({ children }: { children: ReactNode }) {
         const { data: { user }, error: userError } = await withTimeout(supabase.auth.getUser());
         if (!active) return;
         if (userError || !user) { router.replace("/login"); return; }
-        // SafePay now uses phone-only authentication. Email confirmation is not
-        // required for access to the app because email signup was removed.
+        // SafePay uses phone-only authentication. Email confirmation is not required.
         if (!user.phone_confirmed_at) { router.replace("/auth?resume=1"); return; }
-        const { data: profile } = await withTimeout(supabase.rpc("get_my_profile"));
+
+        const { data: rawProfile, error: profileError } = await withTimeout(supabase.rpc("get_my_profile"));
         if (!active) return;
-        if (!profile || !profile.full_name || !profile.phone_verified) { router.replace("/auth?resume=1"); return; }
+        if (profileError) throw profileError;
+
+        // Supabase RPCs can return either one object or an array (for SETOF/table returns).
+        // Normalize both shapes so a valid account is not incorrectly rejected.
+        const profile = Array.isArray(rawProfile) ? rawProfile[0] : rawProfile;
+        if (!profile || !profile.full_name || !profile.phone_verified) {
+          router.replace("/auth?resume=1");
+          return;
+        }
+
         setAvatarUrl(profile.avatar_url || "");
         setAuthorized(true);
       } catch {
