@@ -1,6 +1,6 @@
 export type SafePayTheme = "light" | "dark";
 export type SafePayLanguage = "fr" | "en";
-export type SafePayDisplayCurrency = "XOF";
+export type SafePayDisplayCurrency = "XOF" | "EUR" | "USD";
 
 const KEYS = {
   theme: "safepay-theme",
@@ -40,7 +40,8 @@ export function setLanguage(language: SafePayLanguage) {
 }
 
 export function getDisplayCurrency(): SafePayDisplayCurrency {
-  return "XOF";
+  const value = read(KEYS.currency, "XOF");
+  return value === "EUR" || value === "USD" ? value : "XOF";
 }
 
 export function setDisplayCurrency(currency: SafePayDisplayCurrency) {
