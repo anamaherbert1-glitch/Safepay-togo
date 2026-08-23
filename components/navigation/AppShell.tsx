@@ -3,6 +3,8 @@
 import { ReactNode, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getNotificationSoundEnabled } from "@/lib/preferences";
+import { playNotificationSound } from "@/lib/notificationSound";
 
 function HomeIcon() { return <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 10.5 12 3l8.5 7.5"/><path d="M5.5 9.5v10h13v-10M9.5 19.5v-6h5v6"/></svg>; }
 function TransactionsIcon() { return <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 7h11"/><path d="m14 4 3 3-3 3"/><path d="M18 17H7"/><path d="m10 14-3 3 3 3"/></svg>; }
@@ -37,6 +39,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
+    let notificationChannel: any = null;
     const supabase = createClient();
     const load = async () => {
       setChecking(true);
@@ -63,6 +66,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           setAvatarUrl(profile.avatar_url || "");
         }
         setAuthorized(true);
+        notificationChannel = supabase.channel(`safepay-global-notifications-${user.id}`)
+          .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, async () => {
+            if (active && getNotificationSoundEnabled()) await playNotificationSound();
+          })
+          .subscribe();
       } catch {
         if (active) router.replace("/login");
       } finally {
@@ -85,6 +93,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => {
       active = false;
       listener.subscription.unsubscribe();
+      if (notificationChannel) void supabase.removeChannel(notificationChannel);
       window.removeEventListener("safepay-avatar-updated", onAvatarUpdated);
     };
   }, [router]);
