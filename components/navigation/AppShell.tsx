@@ -41,9 +41,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     const load = async () => {
       setChecking(true);
       try {
-        const { data: { user }, error: userError } = await withTimeout(supabase.auth.getUser());
+        const claimsResult = await withTimeout(supabase.auth.getClaims());
         if (!active) return;
-        if (userError || !user) { router.replace("/login"); return; }
+        if (claimsResult.error || !claimsResult.data?.claims) { router.replace("/login"); return; }
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
+        if (!user) { router.replace("/login"); return; }
         if (!user.phone_confirmed_at) { router.replace("/auth?resume=1"); return; }
 
         const cachedComplete = typeof window !== "undefined" && sessionStorage.getItem("safepay-profile-complete") === "1";
