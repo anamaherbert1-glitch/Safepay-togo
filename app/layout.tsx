@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./safepay-fixes.css";
 import "./safepay-settings.css";
+import "./safepay-polish.css";
 
 export const metadata: Metadata = {
   title: "SafePay",
