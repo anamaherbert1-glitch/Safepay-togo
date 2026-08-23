@@ -3,6 +3,7 @@ import "./globals.css";
 import "./safepay-fixes.css";
 import "./safepay-settings.css";
 import "./safepay-polish.css";
+import "./safepay-responsive.css";
 
 export const metadata: Metadata = {
   title: "SafePay",
