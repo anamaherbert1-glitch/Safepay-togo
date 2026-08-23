@@ -11,6 +11,7 @@ function PlusIcon() { return <svg width="22" height="22" viewBox="0 0 24 24" fil
 function ArrowUpIcon() { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 19V5M7 10l5-5 5 5" strokeLinecap="round" strokeLinejoin="round"/></svg>; }
 function ArrowDownIcon() { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M7 14l5 5 5-5" strokeLinecap="round" strokeLinejoin="round"/></svg>; }
 function MoreIcon() { return <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>; }
+function ProfileMiniIcon() { return <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><circle cx="12" cy="9" r="2.7"/><path d="M7.2 18c.9-2.6 2.5-3.9 4.8-3.9s3.9 1.3 4.8 3.9"/></svg>; }
 
 type RecentTransaction = { id: string; description: string; amount: number | string; currency: string; status: string; created_at: string };
 const statusLabels: Record<string,string> = { pending:"En attente", funded:"Sécurisée", delivered:"Livrée", completed:"Terminée", disputed:"Litige", cancelled:"Annulée" };
@@ -20,6 +21,7 @@ export default function DashboardPage() {
   const [wallet, setWallet] = useState<{ balance: number; locked_balance: number; currency: string } | null>(null);
   const [recent, setRecent] = useState<RecentTransaction[]>([]);
   const [userName, setUserName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [error, setError] = useState("");
   const [loadingRecent, setLoadingRecent] = useState(true);
 
@@ -31,18 +33,31 @@ export default function DashboardPage() {
       if (!active) return;
       if (userError || !user) { setError("Session expirée. Reconnectez-vous."); setLoadingRecent(false); return; }
       const metadataName = typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : "";
-      setUserName(metadataName || user.email?.split("@")[0] || "");
-      const [walletResult, txResult] = await Promise.all([
+      setUserName(metadataName || "Utilisateur");
+      const [profileResult, walletResult, txResult] = await Promise.all([
+        supabase.rpc("get_my_profile"),
         supabase.rpc("get_my_wallet"),
         supabase.from("transactions").select("id,description,amount,currency,status,created_at").order("created_at", { ascending: false }).limit(3),
       ]);
       if (!active) return;
+      if (!profileResult.error) {
+        const profile = Array.isArray(profileResult.data) ? profileResult.data[0] : profileResult.data;
+        if (profile) {
+          setUserName(profile.full_name || metadataName || "Utilisateur");
+          setAvatarUrl(profile.avatar_url || "");
+        }
+      }
       if (walletResult.error) setError(walletResult.error.message); else setWallet(walletResult.data);
       if (txResult.error) setError(txResult.error.message); else setRecent((txResult.data ?? []) as RecentTransaction[]);
       setLoadingRecent(false);
     };
     load();
-    return () => { active = false; };
+    const onAvatarUpdated = (event: Event) => {
+      const custom = event as CustomEvent<{ url?: string }>;
+      setAvatarUrl(custom.detail?.url || "");
+    };
+    window.addEventListener("safepay-avatar-updated", onAvatarUpdated);
+    return () => { active = false; window.removeEventListener("safepay-avatar-updated", onAvatarUpdated); };
   }, []);
 
   const money = (value: number, currency: string) => new Intl.NumberFormat("fr-FR", { style: "currency", currency, maximumFractionDigits: 0 }).format(value);
@@ -50,7 +65,7 @@ export default function DashboardPage() {
 
   return <AppShell>
     <section className="sp-page">
-      <p className="sp-eyebrow">Bonjour{userName ? `, ${userName}` : ""} 👋</p>
+      <div className="sp-dashboard-greeting"><div className="sp-dashboard-avatar">{avatarUrl ? <img src={avatarUrl} alt="Photo de profil" onError={() => setAvatarUrl("")} /> : <ProfileMiniIcon />}</div><p className="sp-eyebrow">Bonjour{userName ? `, ${userName}` : ""} 👋</p></div>
       <h1 className="sp-title">Votre argent, simplement.</h1>
       <section className="sp-balance-card" aria-label="Solde du portefeuille"><div className="sp-balance-glow"/><div className="sp-balance-top"><span>Solde total</span><button className="sp-eye" aria-label="Afficher le solde">◉</button></div><div className="sp-total">{wallet ? money(Number(wallet.balance) + Number(wallet.locked_balance), currency) : "—"}</div><div className="sp-balance-meta"><div><span>Solde disponible</span><strong>{wallet ? money(Number(wallet.balance), currency) : "—"}</strong></div><div><span>Fonds bloqués</span><strong>{wallet ? money(Number(wallet.locked_balance), currency) : "—"}</strong></div></div></section>
       <section className="sp-quick-actions" aria-label="Actions rapides"><button className="sp-action" onClick={() => router.push("/wallet")}><span className="sp-action-icon blue"><PlusIcon/></span><span>Recharger</span></button><button className="sp-action" onClick={() => router.push("/transactions/new")}><span className="sp-action-icon green"><ArrowUpIcon/></span><span>Envoyer</span></button><button className="sp-action" onClick={() => router.push("/transactions")}><span className="sp-action-icon violet"><ArrowDownIcon/></span><span>Recevoir</span></button><button className="sp-action" onClick={() => router.push("/services")}><span className="sp-action-icon orange"><MoreIcon/></span><span>Plus</span></button></section>
