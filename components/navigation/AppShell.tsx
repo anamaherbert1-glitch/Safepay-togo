@@ -2,6 +2,7 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { getNotificationSoundEnabled } from "@/lib/preferences";
 import { playNotificationSound } from "@/lib/notificationSound";
 import { useSafePayLanguage } from "@/lib/i18n";
