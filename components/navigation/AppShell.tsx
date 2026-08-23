@@ -45,7 +45,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         const { data: { user }, error: userError } = await withTimeout(supabase.auth.getUser());
         if (!active) return;
         if (userError || !user) { router.replace("/login"); return; }
-        if (!user.email_confirmed_at || !user.phone_confirmed_at) { router.replace("/auth?resume=1"); return; }
+        // SafePay now uses phone-only authentication. Email confirmation is not
+        // required for access to the app because email signup was removed.
+        if (!user.phone_confirmed_at) { router.replace("/auth?resume=1"); return; }
         const { data: profile } = await withTimeout(supabase.rpc("get_my_profile"));
         if (!active) return;
         if (!profile || !profile.full_name || !profile.phone_verified) { router.replace("/auth?resume=1"); return; }
