@@ -1,14 +1,71 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { LanguageSwitcher, useSafePayLanguage } from "@/lib/i18n";
+
+const slides = ["welcome", "transfer", "secure"] as const;
+
+function PeopleTransferIllustration({ slide }: { slide: number }) {
+  return (
+    <div className={`onboarding-art onboarding-art-${slide}`} aria-hidden="true">
+      <div className="onboarding-orbit orbit-one" />
+      <div className="onboarding-orbit orbit-two" />
+      <div className="person person-left"><span className="person-head"/><span className="person-body"/></div>
+      <div className="person person-right"><span className="person-head"/><span className="person-body"/></div>
+      <div className="phone-card phone-left"><span>90 12 34 56</span><strong>+ 25 000 XOF</strong></div>
+      <div className="phone-card phone-right"><span>+228 98 76 54 32</span><strong>25 000 XOF</strong></div>
+      <div className="money-token">XOF</div>
+      <div className="transfer-path"><i/><i/><i/><b>→</b></div>
+      <div className="secure-check">✓</div>
+    </div>
+  );
+}
 
 export default function Home() {
-  return <main className="safepay-shell auth-screen">
-    <header className="auth-header"><strong>SafePay</strong></header>
-    <section className="auth-content"><div className="safepay-card auth-card">
-      <div className="auth-kicker">SafePay V5</div>
-      <h1>Bienvenue sur SafePay</h1>
-      <p className="sp-muted" style={{lineHeight:1.5}}>Paiements sécurisés, portefeuille et transactions d’escrow dans une interface simple.</p>
-      <Link href="/auth" className="safepay-primary" style={{display:"block",textAlign:"center",textDecoration:"none",marginTop:18}}>Créer un compte</Link>
-      <Link href="/login" className="sp-secondary-button" style={{display:"block",textAlign:"center",textDecoration:"none",marginTop:10}}>Se connecter</Link>
-    </div></section>
-  </main>;
+  const { language, t } = useSafePayLanguage();
+  const [slide, setSlide] = useState(0);
+
+  useEffect(() => {
+    const seen = window.localStorage.getItem("safepay-onboarding-seen");
+    if (seen === "1") setSlide(0);
+  }, []);
+
+  function next() {
+    if (slide < slides.length - 1) setSlide(value => value + 1);
+  }
+
+  const isLast = slide === slides.length - 1;
+  const content = slide === 0 ? { title: t.welcome, text: t.secure } : slide === 1 ? { title: t.transfer, text: t.transferText } : { title: t.secureTitle, text: t.secureText };
+
+  return (
+    <main className="safepay-shell onboarding-screen">
+      <header className="onboarding-header">
+        <div className="onboarding-logo"><span>SP</span><strong>SafePay</strong></div>
+        <LanguageSwitcher compact />
+      </header>
+
+      <section className="onboarding-content">
+        <PeopleTransferIllustration slide={slide} />
+        <div className="onboarding-copy" key={`${language}-${slide}`}>
+          <div className="auth-kicker">SAFE PAY V5</div>
+          <h1>{content.title}</h1>
+          <p>{content.text}</p>
+        </div>
+
+        <div className="onboarding-dots" aria-label="Progression">
+          {slides.map((_, index) => <button key={index} className={index === slide ? "active" : ""} onClick={() => setSlide(index)} aria-label={`Écran ${index + 1}`} />)}
+        </div>
+
+        {isLast ? (
+          <div className="onboarding-actions">
+            <Link href="/auth" className="safepay-primary onboarding-primary" onClick={() => window.localStorage.setItem("safepay-onboarding-seen", "1")}>{t.createAccount}</Link>
+            <Link href="/login" className="onboarding-secondary" onClick={() => window.localStorage.setItem("safepay-onboarding-seen", "1")}>{t.login}</Link>
+          </div>
+        ) : (
+          <button className="safepay-primary onboarding-primary" onClick={next}>{t.continue}</button>
+        )}
+      </section>
+    </main>
+  );
 }
