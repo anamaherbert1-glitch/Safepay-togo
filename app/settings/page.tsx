@@ -31,7 +31,10 @@ export default function SettingsPage(){
   useEffect(()=>{
     setThemeState(getTheme()); setLanguageState(getLanguage()); setCurrencyState(getDisplayCurrency()); setSound(getNotificationSoundEnabled());
     const supabase=createClient();
-    supabase.rpc("get_my_security").then(({data})=>{ if(data?.biometric_enabled !== undefined) setBiometric(Boolean(data.biometric_enabled)); }).catch(()=>{});
+    supabase.rpc("get_my_security").then(
+      ({data})=>{ if(data?.biometric_enabled !== undefined) setBiometric(Boolean(data.biometric_enabled)); },
+      ()=>{}
+    );
   },[]);
 
   function changeTheme(next:SafePayTheme){setThemeState(next);setTheme(next);}
