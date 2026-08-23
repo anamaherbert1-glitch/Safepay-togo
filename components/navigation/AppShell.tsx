@@ -115,11 +115,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   if (checking || !authorized) return <div className="safepay-shell safepay-dashboard"><div className="sp-page-loading" role="status"><span className="sp-loader"/>Chargement…</div></div>;
 
   return <div className="safepay-shell safepay-dashboard">
-    <header className="sp-header">
-      {pathname !== "/dashboard" ? <button className="sp-back" onClick={goBack} aria-label="Retour"><span className="sp-back-icon" aria-hidden="true"/></button> : <span className="sp-header-spacer" aria-hidden="true"/>}
+    {pathname !== "/dashboard" && <header className="sp-header">
+      <button className="sp-back" onClick={goBack} aria-label="Retour"><span className="sp-back-icon" aria-hidden="true"/></button>
       <span className="sp-header-spacer" aria-hidden="true" />
       <span className="sp-header-spacer" aria-hidden="true" />
-    </header>
+    </header>}
     <main className="sp-content">{children}</main>
     <nav className="sp-bottom-nav" aria-label="Navigation principale">
       {items.map(item => {
