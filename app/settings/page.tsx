@@ -1,11 +1,10 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/navigation/AppShell";
 import { createClient } from "@/lib/supabase/client";
 import { getDisplayCurrency, getLanguage, getNotificationSoundEnabled, getTheme, setDisplayCurrency, setLanguage, setNotificationSoundEnabled, setTheme, type SafePayDisplayCurrency, type SafePayLanguage, type SafePayTheme } from "@/lib/preferences";
 import { primeNotificationSound } from "@/lib/notificationSound";
-
+import { useSafePayLanguage } from "@/lib/i18n";
 function ThemeIcon(){return <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/><circle cx="12" cy="12" r="4"/></svg>}
 function LanguageIcon(){return <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 5h8M8 3v2M6 5c.5 4 2.2 6.4 5 8"/><path d="M4.5 13c2.8-1.4 5-3.5 6.5-6"/><path d="M14 14h6M17 10l-3 9M15 17h5"/></svg>}
 function CurrencyIcon(){return <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M14.5 8.5c-.7-.7-1.7-1-2.8-1-1.7 0-2.7.9-2.7 2s1 1.7 2.8 2c1.9.3 2.8 1 2.8 2.3s-1.1 2.2-2.9 2.2c-1.1 0-2.1-.4-2.9-1.1"/><path d="M12 6v12"/></svg>}
@@ -14,113 +13,21 @@ function FingerprintIcon(){return <svg viewBox="0 0 24 24" width="20" height="20
 function BellIcon(){return <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>}
 
 export default function SettingsPage(){
-  const [theme,setThemeState]=useState<SafePayTheme>("light");
-  const [language,setLanguageState]=useState<SafePayLanguage>("fr");
-  const [currency,setCurrencyState]=useState<SafePayDisplayCurrency>("XOF");
-  const [sound,setSound]=useState(true);
-  const [biometric,setBiometric]=useState(false);
-  const [pinOpen,setPinOpen]=useState(false);
-  const [currentPin,setCurrentPin]=useState("");
-  const [newPin,setNewPin]=useState("");
-  const [confirmPin,setConfirmPin]=useState("");
-  const [pinMessage,setPinMessage]=useState("");
-  const [pinError,setPinError]=useState("");
-  const [busy,setBusy]=useState(false);
-  const [biometricMessage,setBiometricMessage]=useState("");
-
-  useEffect(()=>{
-    setThemeState(getTheme()); setLanguageState(getLanguage()); setCurrencyState(getDisplayCurrency()); setSound(getNotificationSoundEnabled());
-    const supabase=createClient();
-    supabase.rpc("get_my_security").then(
-      ({data})=>{ if(data?.biometric_enabled !== undefined) setBiometric(Boolean(data.biometric_enabled)); },
-      ()=>{}
-    );
-  },[]);
-
-  function changeTheme(next:SafePayTheme){setThemeState(next);setTheme(next);}
-  function changeLanguage(next:SafePayLanguage){setLanguageState(next);setLanguage(next);}
-  function changeCurrency(next:SafePayDisplayCurrency){setCurrencyState(next);setDisplayCurrency(next);}
-  async function changeSound(next:boolean){setSound(next);setNotificationSoundEnabled(next);if(next){try{await primeNotificationSound();}catch{}}}
-
-  async function toggleBiometric(){
-    setBusy(true); setPinError(""); setBiometricMessage("");
-    try{
-      const supabase=createClient();
-      if(!biometric){
-        if(!window.isSecureContext || !("credentials" in navigator) || !("PublicKeyCredential" in window)) throw new Error("La biométrie n'est pas disponible sur cet appareil ou ce navigateur.");
-        const {data:{user}}=await supabase.auth.getUser();
-        if(!user) throw new Error("Session expirée.");
-        const origin=window.location.origin;
-        const {data:options,error:optionsError}=await supabase.functions.invoke("webauthn",{body:{action:"register-options",origin}});
-        if(optionsError) throw optionsError;
-        const publicKey={...options,challenge:fromBase64Url(options.challenge),user:{...options.user,id:fromBase64Url(options.user.id)},excludeCredentials:(options.excludeCredentials||[]).map((c:any)=>({...c,id:fromBase64Url(c.id)}))};
-        const credential=await navigator.credentials.create({publicKey}) as PublicKeyCredential | null;
-        if(!credential) throw new Error("La configuration biométrique a été annulée.");
-        const response=credential.response as AuthenticatorAttestationResponse;
-        const payload={id:credential.id,rawId:toBase64Url(credential.rawId),type:credential.type,response:{clientDataJSON:toBase64Url(response.clientDataJSON),attestationObject:toBase64Url(response.attestationObject),transports:response.getTransports?.()||[]}};
-        const {data:verified,error:verifyError}=await supabase.functions.invoke("webauthn",{body:{action:"register-verify",origin,response:payload}});
-        if(verifyError||!verified?.verified) throw verifyError||new Error("Vérification biométrique refusée.");
-        setBiometric(true); setBiometricMessage("Biométrie activée et enregistrée sur cet appareil.");
-      }else{
-        const {error}=await supabase.rpc("set_my_biometric",{p_enabled:false});
-        if(error) throw error;
-        setBiometric(false); setBiometricMessage("Biométrie désactivée.");
-      }
-    }catch(error){setPinError(error instanceof Error?error.message:"Impossible de modifier la biométrie.");}
-    finally{setBusy(false);}
-  }
-
-  async function testBiometric(){
-    setBusy(true); setPinError(""); setBiometricMessage("");
-    try{
-      const supabase=createClient();
-      if(!window.isSecureContext || !("credentials" in navigator) || !("PublicKeyCredential" in window)) throw new Error("WebAuthn n'est pas disponible sur cet appareil.");
-      const origin=window.location.origin;
-      const {data:options,error:optionsError}=await supabase.functions.invoke("webauthn",{body:{action:"auth-options",origin}});
-      if(optionsError) throw optionsError;
-      const publicKey={...options,challenge:fromBase64Url(options.challenge),allowCredentials:(options.allowCredentials||[]).map((c:any)=>({...c,id:fromBase64Url(c.id)}))};
-      const credential=await navigator.credentials.get({publicKey}) as PublicKeyCredential | null;
-      if(!credential) throw new Error("Vérification biométrique annulée.");
-      const response=credential.response as AuthenticatorAssertionResponse;
-      const payload={id:credential.id,rawId:toBase64Url(credential.rawId),type:credential.type,response:{clientDataJSON:toBase64Url(response.clientDataJSON),authenticatorData:toBase64Url(response.authenticatorData),signature:toBase64Url(response.signature),userHandle:response.userHandle?toBase64Url(response.userHandle):null}};
-      const {data:verified,error}=await supabase.functions.invoke("webauthn",{body:{action:"auth-verify",origin,response:payload}});
-      if(error||!verified?.verified) throw error||new Error("La biométrie n'a pas été validée.");
-      setBiometricMessage("Biométrie vérifiée avec succès.");
-    }catch(error){setPinError(error instanceof Error?error.message:"Échec de la vérification biométrique.");}
-    finally{setBusy(false);}
-  }
-
-  async function savePin(){
-    setPinError(""); setPinMessage("");
-    if(!/^\d{4,6}$/.test(newPin)) return setPinError("Le PIN doit contenir 4 à 6 chiffres.");
-    if(newPin!==confirmPin) return setPinError("Les deux nouveaux PIN ne correspondent pas.");
-    setBusy(true);
-    try{
-      const supabase=createClient();
-      if(currentPin){ const {data,error}=await supabase.rpc("verify_my_pin",{p_pin:currentPin}); if(error) throw error; if(!data) throw new Error("Le PIN actuel est incorrect."); }
-      const {error}=await supabase.rpc("set_my_pin",{p_pin:newPin}); if(error) throw error;
-      setPinMessage("PIN SafePay mis à jour."); setCurrentPin(""); setNewPin(""); setConfirmPin("");
-    }catch(error){setPinError(error instanceof Error?error.message:"Impossible de modifier le PIN.");}
-    finally{setBusy(false);}
-  }
-
-  return <AppShell><section className="sp-page"><div className="sp-page-head"><div><p className="sp-eyebrow">Préférences</p><h1 className="sp-title">Paramètres</h1></div></div>
-    <section className="sp-section-card"><h2>Apparence</h2><div className="settings-option"><span className="settings-option-icon blue"><ThemeIcon/></span><span className="settings-option-main"><strong>Thème</strong><small>Choisissez l'apparence claire ou sombre de SafePay.</small></span><span className="settings-option-value">{theme === "dark" ? "Sombre" : "Clair"}</span></div><div className="settings-segment"><button className={theme === "light" ? "active" : ""} onClick={()=>changeTheme("light")}>☀️ Clair</button><button className={theme === "dark" ? "active" : ""} onClick={()=>changeTheme("dark")}>🌙 Sombre</button></div></section>
-    <section className="sp-section-card"><h2>Langue</h2><div className="settings-option"><span className="settings-option-icon green"><LanguageIcon/></span><span className="settings-option-main"><strong>Langue de l'application</strong><small>Français et English sont maintenant disponibles comme préférences globales.</small></span><span className="settings-option-value">{language === "fr" ? "Français" : "English"}</span></div><div className="settings-segment"><button className={language === "fr" ? "active" : ""} onClick={()=>changeLanguage("fr")}>🇫🇷 Français</button><button className={language === "en" ? "active" : ""} onClick={()=>changeLanguage("en")}>🇬🇧 English</button></div></section>
-    <section className="sp-section-card"><h2>Devise d'affichage</h2><div className="settings-option"><span className="settings-option-icon violet"><CurrencyIcon/></span><span className="settings-option-main"><strong>Devise préférée</strong><small>La préférence d'affichage ne modifie jamais les soldes ni les règlements réels.</small></span><span className="settings-option-value">{currency}</span></div><select className="settings-select" value={currency} onChange={e=>changeCurrency(e.target.value as SafePayDisplayCurrency)} aria-label="Devise d'affichage"><option value="XOF">XOF — Franc CFA</option><option value="EUR">EUR — Euro</option><option value="USD">USD — Dollar américain</option></select><p className="settings-hint">XOF reste la devise financière de SafePay-Togo. EUR et USD sont des préférences d'affichage ; aucune conversion n'est appliquée au solde réel tant qu'une source de taux backend n'est pas configurée.</p></section>
-    <section className="sp-section-card"><h2>Sécurité</h2><button className="settings-option" onClick={()=>{setPinOpen(true);setPinError("");setPinMessage("")}}><span className="settings-option-icon orange"><PinIcon/></span><span className="settings-option-main"><strong>PIN SafePay</strong><small>Créer ou changer votre code secret sécurisé.</small></span><span className="settings-option-value">Modifier</span></button><button className="settings-option" onClick={toggleBiometric} disabled={busy} style={{marginTop:10}}><span className="settings-option-icon green"><FingerprintIcon/></span><span className="settings-option-main"><strong>Biométrie</strong><small>WebAuthn avec vérification serveur du challenge et de la clé publique.</small></span><span className={biometric?"settings-toggle active":"settings-toggle"} aria-hidden="true"/></button>{biometric&&<button className="settings-option" onClick={()=>void testBiometric()} disabled={busy} style={{marginTop:10}}><span className="settings-option-main"><strong>Tester la biométrie</strong><small>Vérifier que l'authentificateur de cet appareil fonctionne.</small></span><span className="settings-option-value">Tester</span></button>}{biometricMessage&&<p className="settings-success">{biometricMessage}</p>}{pinError&&<p className="settings-error">{pinError}</p>}</section>
-    <section className="sp-section-card"><h2>Notifications</h2><button className="settings-option" onClick={()=>void changeSound(!sound)}><span className="settings-option-icon blue"><BellIcon/></span><span className="settings-option-main"><strong>Son des notifications</strong><small>Jouer un son discret lorsqu'une nouvelle notification arrive pendant que l'application est ouverte.</small></span><span className={sound?"settings-toggle active":"settings-toggle"} aria-hidden="true"/></button></section>
-    {pinOpen&&<div className="settings-modal" role="dialog" aria-modal="true" aria-label="Changer le PIN"><div className="settings-sheet"><div className="settings-sheet-head"><h2>Changer le PIN SafePay</h2><button className="settings-close" onClick={()=>setPinOpen(false)} aria-label="Fermer">×</button></div><div className="settings-field"><label>PIN actuel (laisser vide si vous en créez un)</label><input inputMode="numeric" maxLength={6} type="password" value={currentPin} onChange={e=>setCurrentPin(e.target.value.replace(/\D/g,""))}/></div><div className="settings-field"><label>Nouveau PIN</label><input inputMode="numeric" maxLength={6} type="password" value={newPin} onChange={e=>setNewPin(e.target.value.replace(/\D/g,""))}/></div><div className="settings-field"><label>Confirmer le nouveau PIN</label><input inputMode="numeric" maxLength={6} type="password" value={confirmPin} onChange={e=>setConfirmPin(e.target.value.replace(/\D/g,""))}/></div>{pinError&&<p className="settings-error">{pinError}</p>}{pinMessage&&<p className="settings-success">{pinMessage}</p>}<button className="safepay-primary sp-submit" onClick={savePin} disabled={busy}>{busy?"Enregistrement…":"Enregistrer le PIN"}</button></div></div>}
+  const { language } = useSafePayLanguage(); const en=language==="en";
+  const [theme,setThemeState]=useState<SafePayTheme>("light"); const [languageState,setLanguageState]=useState<SafePayLanguage>("fr"); const [currency,setCurrencyState]=useState<SafePayDisplayCurrency>("XOF"); const [sound,setSound]=useState(true); const [biometric,setBiometric]=useState(false); const [pinOpen,setPinOpen]=useState(false); const [currentPin,setCurrentPin]=useState(""); const [newPin,setNewPin]=useState(""); const [confirmPin,setConfirmPin]=useState(""); const [pinMessage,setPinMessage]=useState(""); const [pinError,setPinError]=useState(""); const [busy,setBusy]=useState(false); const [biometricMessage,setBiometricMessage]=useState("");
+  useEffect(()=>{ setThemeState(getTheme()); setLanguageState(getLanguage()); setCurrencyState(getDisplayCurrency()); setSound(getNotificationSoundEnabled()); const supabase=createClient(); supabase.rpc("get_my_security").then(({data})=>{if(data?.biometric_enabled!==undefined)setBiometric(Boolean(data.biometric_enabled));},()=>{}); },[]);
+  function changeTheme(next:SafePayTheme){setThemeState(next);setTheme(next);} function changeLanguage(next:SafePayLanguage){setLanguageState(next);setLanguage(next);} function changeCurrency(next:SafePayDisplayCurrency){setCurrencyState(next);setDisplayCurrency(next);} async function changeSound(next:boolean){setSound(next);setNotificationSoundEnabled(next);if(next){try{await primeNotificationSound();}catch{}}}
+  async function toggleBiometric(){setBusy(true);setPinError("");setBiometricMessage("");try{const supabase=createClient();if(!biometric){if(!window.isSecureContext||!("credentials"in navigator)||!("PublicKeyCredential"in window))throw new Error(en?"Biometrics are not available on this device or browser.":"La biométrie n'est pas disponible sur cet appareil ou ce navigateur.");const {data:{user}}=await supabase.auth.getUser();if(!user)throw new Error(en?"Session expired.":"Session expirée.");const origin=window.location.origin;const {data:options,error:optionsError}=await supabase.functions.invoke("webauthn",{body:{action:"register-options",origin}});if(optionsError)throw optionsError;const publicKey={...options,challenge:fromBase64Url(options.challenge),user:{...options.user,id:fromBase64Url(options.user.id)},excludeCredentials:(options.excludeCredentials||[]).map((c:any)=>({...c,id:fromBase64Url(c.id)}))};const credential=await navigator.credentials.create({publicKey}) as PublicKeyCredential|null;if(!credential)throw new Error(en?"Biometric setup was cancelled.":"La configuration biométrique a été annulée.");const response=credential.response as AuthenticatorAttestationResponse;const payload={id:credential.id,rawId:toBase64Url(credential.rawId),type:credential.type,response:{clientDataJSON:toBase64Url(response.clientDataJSON),attestationObject:toBase64Url(response.attestationObject),transports:response.getTransports?.()||[]}};const {data:verified,error:verifyError}=await supabase.functions.invoke("webauthn",{body:{action:"register-verify",origin,response:payload}});if(verifyError||!verified?.verified)throw verifyError||new Error(en?"Biometric verification was refused.":"Vérification biométrique refusée.");setBiometric(true);setBiometricMessage(en?"Biometrics enabled on this device.":"Biométrie activée et enregistrée sur cet appareil.");}else{const {error}=await supabase.rpc("set_my_biometric",{p_enabled:false});if(error)throw error;setBiometric(false);setBiometricMessage(en?"Biometrics disabled.":"Biométrie désactivée.");}}catch(error){setPinError(error instanceof Error?error.message:(en?"Unable to change biometrics.":"Impossible de modifier la biométrie."));}finally{setBusy(false);}}
+  async function testBiometric(){setBusy(true);setPinError("");setBiometricMessage("");try{const supabase=createClient();if(!window.isSecureContext||!("credentials"in navigator)||!("PublicKeyCredential"in window))throw new Error(en?"WebAuthn is not available on this device.":"WebAuthn n'est pas disponible sur cet appareil.");const origin=window.location.origin;const {data:options,error:optionsError}=await supabase.functions.invoke("webauthn",{body:{action:"auth-options",origin}});if(optionsError)throw optionsError;const publicKey={...options,challenge:fromBase64Url(options.challenge),allowCredentials:(options.allowCredentials||[]).map((c:any)=>({...c,id:fromBase64Url(c.id)}))};const credential=await navigator.credentials.get({publicKey}) as PublicKeyCredential|null;if(!credential)throw new Error(en?"Biometric verification cancelled.":"Vérification biométrique annulée.");const response=credential.response as AuthenticatorAssertionResponse;const payload={id:credential.id,rawId:toBase64Url(credential.rawId),type:credential.type,response:{clientDataJSON:toBase64Url(response.clientDataJSON),authenticatorData:toBase64Url(response.authenticatorData),signature:toBase64Url(response.signature),userHandle:response.userHandle?toBase64Url(response.userHandle):null}};const {data:verified,error}=await supabase.functions.invoke("webauthn",{body:{action:"auth-verify",origin,response:payload}});if(error||!verified?.verified)throw error||new Error(en?"Biometrics were not validated.":"La biométrie n'a pas été validée.");setBiometricMessage(en?"Biometrics verified successfully.":"Biométrie vérifiée avec succès.");}catch(error){setPinError(error instanceof Error?error.message:(en?"Biometric verification failed.":"Échec de la vérification biométrique."));}finally{setBusy(false);}}
+  async function savePin(){setPinError("");setPinMessage("");if(!/^\d{4,6}$/.test(newPin))return setPinError(en?"PIN must contain 4 to 6 digits.":"Le PIN doit contenir 4 à 6 chiffres.");if(newPin!==confirmPin)return setPinError(en?"The new PINs do not match.":"Les deux nouveaux PIN ne correspondent pas.");setBusy(true);try{const supabase=createClient();if(currentPin){const {data,error}=await supabase.rpc("verify_my_pin",{p_pin:currentPin});if(error)throw error;if(!data)throw new Error(en?"Current PIN is incorrect.":"Le PIN actuel est incorrect.");}const {error}=await supabase.rpc("set_my_pin",{p_pin:newPin});if(error)throw error;setPinMessage(en?"SafePay PIN updated.":"PIN SafePay mis à jour.");setCurrentPin("");setNewPin("");setConfirmPin("");}catch(error){setPinError(error instanceof Error?error.message:(en?"Unable to change PIN.":"Impossible de modifier le PIN."));}finally{setBusy(false);}}
+  return <AppShell><section className="sp-page"><div className="sp-page-head"><div><p className="sp-eyebrow">{en?"Preferences":"Préférences"}</p><h1 className="sp-title">{en?"Settings":"Paramètres"}</h1></div></div>
+    <section className="sp-section-card"><h2>{en?"Appearance":"Apparence"}</h2><div className="settings-option"><span className="settings-option-icon blue"><ThemeIcon/></span><span className="settings-option-main"><strong>{en?"Theme":"Thème"}</strong><small>{en?"Choose SafePay's light or dark appearance.":"Choisissez l'apparence claire ou sombre de SafePay."}</small></span><span className="settings-option-value">{theme==="dark"?(en?"Dark":"Sombre"):(en?"Light":"Clair")}</span></div><div className="settings-segment"><button className={theme==="light"?"active":""} onClick={()=>changeTheme("light")}>☀️ {en?"Light":"Clair"}</button><button className={theme==="dark"?"active":""} onClick={()=>changeTheme("dark")}>🌙 {en?"Dark":"Sombre"}</button></div></section>
+    <section className="sp-section-card"><h2>{en?"Language":"Langue"}</h2><div className="settings-option"><span className="settings-option-icon green"><LanguageIcon/></span><span className="settings-option-main"><strong>{en?"Application language":"Langue de l'application"}</strong><small>{en?"Choose the language used by SafePay screens.":"Français et English sont disponibles comme préférences globales."}</small></span><span className="settings-option-value">{languageState==="fr"?"Français":"English"}</span></div><div className="settings-segment"><button className={languageState==="fr"?"active":""} onClick={()=>changeLanguage("fr")}>🇫🇷 Français</button><button className={languageState==="en"?"active":""} onClick={()=>changeLanguage("en")}>🇬🇧 English</button></div></section>
+    <section className="sp-section-card"><h2>{en?"Display currency":"Devise d'affichage"}</h2><div className="settings-option"><span className="settings-option-icon violet"><CurrencyIcon/></span><span className="settings-option-main"><strong>{en?"Preferred currency":"Devise préférée"}</strong><small>{en?"Display preference only; it never changes real balances or settlements.":"La préférence d'affichage ne modifie jamais les soldes ni les règlements réels."}</small></span><span className="settings-option-value">{currency}</span></div><select className="settings-select" value={currency} onChange={e=>changeCurrency(e.target.value as SafePayDisplayCurrency)} aria-label={en?"Display currency":"Devise d'affichage"}><option value="XOF">XOF — {en?"CFA Franc":"Franc CFA"}</option><option value="EUR">EUR — Euro</option><option value="USD">USD — {en?"US Dollar":"Dollar américain"}</option></select><p className="settings-hint">{en?"XOF remains SafePay-Togo's financial currency. EUR and USD are display preferences; no conversion is applied without a backend rate source.":"XOF reste la devise financière de SafePay-Togo. EUR et USD sont des préférences d'affichage ; aucune conversion n'est appliquée au solde réel tant qu'une source de taux backend n'est pas configurée."}</p></section>
+    <section className="sp-section-card"><h2>{en?"Security":"Sécurité"}</h2><button className="settings-option" onClick={()=>{setPinOpen(true);setPinError("");setPinMessage("")}}><span className="settings-option-icon orange"><PinIcon/></span><span className="settings-option-main"><strong>SafePay PIN</strong><small>{en?"Create or change your secure code.":"Créer ou changer votre code secret sécurisé."}</small></span><span className="settings-option-value">{en?"Change":"Modifier"}</span></button><button className="settings-option" onClick={toggleBiometric} disabled={busy} style={{marginTop:10}}><span className="settings-option-icon green"><FingerprintIcon/></span><span className="settings-option-main"><strong>{en?"Biometrics":"Biométrie"}</strong><small>{en?"WebAuthn with server-side challenge and public-key verification.":"WebAuthn avec vérification serveur du challenge et de la clé publique."}</small></span><span className={biometric?"settings-toggle active":"settings-toggle"}/></button>{biometric&&<button className="settings-option" onClick={()=>void testBiometric()} disabled={busy} style={{marginTop:10}}><span className="settings-option-main"><strong>{en?"Test biometrics":"Tester la biométrie"}</strong><small>{en?"Verify this device's authenticator.":"Vérifier que l'authentificateur de cet appareil fonctionne."}</small></span><span className="settings-option-value">{en?"Test":"Tester"}</span></button>}{biometricMessage&&<p className="settings-success">{biometricMessage}</p>}{pinError&&<p className="settings-error">{pinError}</p>}</section>
+    <section className="sp-section-card"><h2>{en?"Notifications":"Notifications"}</h2><button className="settings-option" onClick={()=>void changeSound(!sound)}><span className="settings-option-icon blue"><BellIcon/></span><span className="settings-option-main"><strong>{en?"Notification sound":"Son des notifications"}</strong><small>{en?"Play a discreet sound when a new notification arrives while the app is open.":"Jouer un son discret lorsqu'une nouvelle notification arrive pendant que l'application est ouverte."}</small></span><span className={sound?"settings-toggle active":"settings-toggle"}/></button></section>
+    {pinOpen&&<div className="settings-modal" role="dialog" aria-modal="true" aria-label={en?"Change PIN":"Changer le PIN"}><div className="settings-sheet"><div className="settings-sheet-head"><h2>{en?"Change SafePay PIN":"Changer le PIN SafePay"}</h2><button className="settings-close" onClick={()=>setPinOpen(false)} aria-label={en?"Close":"Fermer"}>×</button></div><div className="settings-field"><label>{en?"Current PIN (leave empty if creating one)":"PIN actuel (laisser vide si vous en créez un)"}</label><input inputMode="numeric" maxLength={6} type="password" value={currentPin} onChange={e=>setCurrentPin(e.target.value.replace(/\D/g,""))}/></div><div className="settings-field"><label>{en?"New PIN":"Nouveau PIN"}</label><input inputMode="numeric" maxLength={6} type="password" value={newPin} onChange={e=>setNewPin(e.target.value.replace(/\D/g,""))}/></div><div className="settings-field"><label>{en?"Confirm new PIN":"Confirmer le nouveau PIN"}</label><input inputMode="numeric" maxLength={6} type="password" value={confirmPin} onChange={e=>setConfirmPin(e.target.value.replace(/\D/g,""))}/></div>{pinError&&<p className="settings-error">{pinError}</p>}{pinMessage&&<p className="settings-success">{pinMessage}</p>}<button className="safepay-primary sp-submit" onClick={savePin} disabled={busy}>{busy?(en?"Saving…":"Enregistrement…"):(en?"Save PIN":"Enregistrer le PIN")}</button></div></div>}
   </section></AppShell>;
 }
-
-function fromBase64Url(value: string) {
-  const s = value.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((value.length + 3) % 4);
-  const raw = atob(s);
-  return Uint8Array.from(raw, c => c.charCodeAt(0));
-}
-function toBase64Url(value: ArrayBuffer) {
-  let binary = "";
-  for (const byte of new Uint8Array(value)) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
+function fromBase64Url(value:string){const s=value.replace(/-/g,"+").replace(/_/g,"/")+"===".slice((value.length+3)%4);const raw=atob(s);return Uint8Array.from(raw,c=>c.charCodeAt(0));}
+function toBase64Url(value:ArrayBuffer){let binary="";for(const byte of new Uint8Array(value))binary+=String.fromCharCode(byte);return btoa(binary).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/g,"");}
