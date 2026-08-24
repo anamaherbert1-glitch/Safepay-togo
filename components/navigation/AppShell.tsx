@@ -30,7 +30,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   function navigate(href: string) { if (href !== pathname) router.push(href); }
   if (checking || !authorized) return <div className="safepay-shell safepay-dashboard"><div className="sp-page-loading" role="status"><span className="sp-loader"/>{language === "en" ? "Loading…" : "Chargement…"}</div></div>;
   return <div className="safepay-shell safepay-dashboard">
-    {pathname !== "/dashboard" && <header className="sp-header"><button className="sp-back" onClick={goBack} aria-label={language === "en" ? "Back" : "Retour"><BackIcon/></button><span className="sp-header-spacer"/><span className="sp-header-spacer"/></header>}
+    {pathname !== "/dashboard" && <header className="sp-header"><button className="sp-back" onClick={goBack} aria-label={language === "en" ? "Back" : "Retour"}><BackIcon/></button><span className="sp-header-spacer"/><span className="sp-header-spacer"/></header>}
     <main className="sp-content">{children}</main>
     <nav className="sp-bottom-nav" aria-label={language === "en" ? "Main navigation" : "Navigation principale"}>{items.map(item => { const isProfile = item.href === "/profile"; const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`)); return <button key={item.href} className={active ? "active" : ""} onClick={() => navigate(item.href)} aria-current={active ? "page" : undefined}><span className={isProfile ? "sp-nav-profile-icon" : ""} aria-hidden="true">{isProfile && avatarUrl ? <img src={avatarUrl} alt="" onError={() => setAvatarUrl("")}/> : item.icon}</span><small>{item.label}</small></button>; })}</nav>
   </div>;
