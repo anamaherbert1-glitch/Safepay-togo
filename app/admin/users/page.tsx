@@ -1,88 +1,30 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-type UserRow = {
-  id: string;
-  full_name: string | null;
-  phone: string | null;
-  country: string | null;
-  role: string | null;
-  phone_verified: boolean;
-  kyc_status: string | null;
-  created_at: string;
-  is_active: boolean;
-  is_admin: boolean;
-};
-
-type Result = { items: UserRow[]; total: number; limit: number; offset: number; has_more: boolean };
-
-const PAGE_SIZE = 25;
-const inputStyle: React.CSSProperties = { width: "100%", background: "#071222", color: "#e8f1ff", border: "1px solid rgba(148,163,184,.16)", borderRadius: 10, padding: "11px 12px", outline: "none" };
-const buttonStyle: React.CSSProperties = { background: "#1677ff", color: "#fff", border: 0, borderRadius: 10, padding: "10px 14px", fontWeight: 800, cursor: "pointer" };
-
-export default function AdminUsersPage() {
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
-  const [kyc, setKyc] = useState("all");
-  const [admin, setAdmin] = useState("all");
-  const [page, setPage] = useState(0);
-  const [result, setResult] = useState<Result>({ items: [], total: 0, limit: PAGE_SIZE, offset: 0, has_more: false });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const totalPages = Math.max(1, Math.ceil(result.total / PAGE_SIZE));
-  const currentPage = page + 1;
-
-  async function loadUsers() {
-    setLoading(true); setError("");
-    const { data, error } = await createClient().rpc("admin_list_users", {
-      p_search: search.trim() || null,
-      p_limit: PAGE_SIZE,
-      p_offset: page * PAGE_SIZE,
-      p_status: status,
-      p_kyc: kyc,
-      p_admin: admin,
-    });
-    if (error) setError(error.message);
-    else if (data) setResult(data as Result);
-    setLoading(false);
-  }
-
-  useEffect(() => { void loadUsers(); }, [page, status, kyc, admin]);
-  const kycOptions = useMemo(() => Array.from(new Set(result.items.map(u => u.kyc_status).filter(Boolean))) as string[], [result.items]);
-
-  function submitSearch(e: React.FormEvent) { e.preventDefault(); setPage(0); void loadUsers(); }
-  function reset() { setSearch(""); setStatus("all"); setKyc("all"); setAdmin("all"); setPage(0); }
-
-  return (
-    <main style={{ minHeight: "100vh", background: "#050b16", color: "#f1f6ff", fontFamily: "Inter,system-ui,sans-serif" }}>
-      <div style={{ maxWidth: 1250, margin: "0 auto", padding: 28 }}>
-        <a href="/admin" style={{ color: "#72b4ff", textDecoration: "none" }}>← Dashboard Admin</a>
-        <header style={{ margin: "22px 0" }}>
-          <small style={{ color: "#6295cc", letterSpacing: ".15em", fontWeight: 800 }}>ADMINISTRATION</small>
-          <h1 style={{ fontSize: 34, margin: "8px 0" }}>Utilisateurs</h1>
-          <p style={{ color: "#8094aa" }}>Recherche sécurisée côté serveur, filtres et pagination.</p>
-        </header>
-
-        <section style={{ background: "#0a1424", border: "1px solid rgba(148,163,184,.13)", borderRadius: 18, padding: 20 }}>
-          <form onSubmit={submitSearch} style={{ display: "grid", gridTemplateColumns: "minmax(260px,2fr) repeat(3,minmax(140px,1fr)) auto", gap: 10, alignItems: "end" }}>
-            <label>Recherche (nom, téléphone ou ID)<input style={inputStyle} value={search} onChange={e => setSearch(e.target.value)} placeholder="ex. +228..., email/ID..." /></label>
-            <label>Statut<select style={inputStyle} value={status} onChange={e => { setStatus(e.target.value); setPage(0); }}><option value="all">Tous</option><option value="active">Actifs</option><option value="blocked">Bloqués</option></select></label>
-            <label>KYC<select style={inputStyle} value={kyc} onChange={e => { setKyc(e.target.value); setPage(0); }}><option value="all">Tous</option><option value="pending">En attente</option><option value="verified">Vérifié</option><option value="rejected">Refusé</option></select></label>
-            <label>Rôle<select style={inputStyle} value={admin} onChange={e => { setAdmin(e.target.value); setPage(0); }}><option value="all">Tous</option><option value="admin">Admins</option><option value="non_admin">Non-admins</option></select></label>
-            <button type="submit" style={buttonStyle}>Rechercher</button>
-          </form>
-          <button type="button" onClick={reset} style={{ marginTop: 12, background: "transparent", color: "#9db1c8", border: 0, cursor: "pointer" }}>Réinitialiser les filtres</button>
-        </section>
-
-        <section style={{ marginTop: 14, background: "#0a1424", border: "1px solid rgba(148,163,184,.13)", borderRadius: 18, overflow: "hidden" }}>
-          <div style={{ padding: 18, display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}><strong>{result.total} utilisateur{result.total > 1 ? "s" : ""}</strong><span style={{ color: "#8094aa", fontSize: 13 }}>Page {currentPage} / {totalPages}</span></div>
-          {loading ? <div style={{ padding: 30, color: "#8094aa" }}>Chargement…</div> : error ? <div style={{ padding: 30, color: "#ff9c9c" }}>{error}</div> : result.items.length === 0 ? <div style={{ padding: 30, color: "#8094aa" }}>Aucun utilisateur trouvé.</div> : <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}><thead><tr>{["Utilisateur","Téléphone","KYC","Statut","Rôle","Créé le","Action"].map(h => <th key={h} style={{ textAlign: "left", padding: 14, color: "#8094aa", fontSize: 12, borderTop: "1px solid rgba(148,163,184,.1)" }}>{h}</th>)}</tr></thead><tbody>{result.items.map(u => <tr key={u.id}>{<><td style={{ padding: 14, borderTop: "1px solid rgba(148,163,184,.08)" }}><b>{u.full_name || "Sans nom"}</b><div style={{ color: "#657b92", fontSize: 11, marginTop: 4 }}>{u.id}</div></td><td style={{ padding: 14, borderTop: "1px solid rgba(148,163,184,.08)" }}>{u.phone || "—"}</td><td style={{ padding: 14, borderTop: "1px solid rgba(148,163,184,.08)" }}>{u.kyc_status || "—"}</td><td style={{ padding: 14, borderTop: "1px solid rgba(148,163,184,.08)" }}>{u.is_active ? "Actif" : "Bloqué"}</td><td style={{ padding: 14, borderTop: "1px solid rgba(148,163,184,.08)" }}>{u.is_admin ? "Admin" : (u.role || "user")}</td><td style={{ padding: 14, borderTop: "1px solid rgba(148,163,184,.08)" }}>{new Date(u.created_at).toLocaleDateString("fr-FR")}</td><td style={{ padding: 14, borderTop: "1px solid rgba(148,163,184,.08)" }}><a href={`/admin/users/${u.id}`} style={{ color: "#72b4ff", textDecoration: "none", fontWeight: 700 }}>Voir</a></td></>}</tr>)}</tbody></table></div>}
-          <div style={{ padding: 16, display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(148,163,184,.1)" }}><button type="button" disabled={page===0 || loading} onClick={() => setPage(p => Math.max(0,p-1))} style={{ ...buttonStyle, opacity: page===0?0.45:1 }}>← Précédent</button><span style={{ color: "#8094aa", fontSize: 13 }}>{result.items.length ? `${result.offset+1}–${result.offset+result.items.length} sur ${result.total}` : "0 résultat"}</span><button type="button" disabled={!result.has_more || loading} onClick={() => setPage(p => p+1)} style={{ ...buttonStyle, opacity: !result.has_more?0.45:1 }}>Suivant →</button></div>
-        </section>
-      </div>
-    </main>
-  );
+type UserRow = { id:string; full_name:string|null; email:string|null; phone:string|null; country:string|null; role:string|null; phone_verified:boolean; kyc_status:string|null; created_at:string; is_active:boolean; is_admin:boolean };
+type Result = { items:UserRow[]; total:number; limit:number; offset:number; has_more:boolean };
+const PAGE_SIZE=25;
+const inputStyle:React.CSSProperties={width:"100%",background:"#071222",color:"#e8f1ff",border:"1px solid rgba(148,163,184,.16)",borderRadius:10,padding:"11px 12px",outline:"none"};
+const buttonStyle:React.CSSProperties={background:"#1677ff",color:"#fff",border:0,borderRadius:10,padding:"10px 14px",fontWeight:800,cursor:"pointer"};
+export default function AdminUsersPage(){
+ const [search,setSearch]=useState(""),[status,setStatus]=useState("all"),[kyc,setKyc]=useState("all"),[admin,setAdmin]=useState("all"),[page,setPage]=useState(0),[result,setResult]=useState<Result>({items:[],total:0,limit:PAGE_SIZE,offset:0,has_more:false}),[loading,setLoading]=useState(true),[error,setError]=useState("");
+ const totalPages=Math.max(1,Math.ceil(result.total/PAGE_SIZE)),currentPage=page+1;
+ async function loadUsers(){setLoading(true);setError("");const {data,error}=await createClient().rpc("admin_list_users",{p_search:search.trim()||null,p_limit:PAGE_SIZE,p_offset:page*PAGE_SIZE,p_status:status,p_kyc:kyc,p_admin:admin});if(error)setError(error.message);else if(data)setResult(data as Result);setLoading(false)}
+ useEffect(()=>{void loadUsers()},[page,status,kyc,admin]);
+ function submitSearch(e:React.FormEvent){e.preventDefault();setPage(0);void loadUsers()}
+ function reset(){setSearch("");setStatus("all");setKyc("all");setAdmin("all");setPage(0)}
+ return <main style={{minHeight:"100vh",background:"#050b16",color:"#f1f6ff",fontFamily:"Inter,system-ui,sans-serif"}}><div style={{maxWidth:1250,margin:"0 auto",padding:28}}>
+  <a href="/admin" style={{color:"#72b4ff",textDecoration:"none"}}>← Dashboard Admin</a><header style={{margin:"22px 0"}}><small style={{color:"#6295cc",letterSpacing:".15em",fontWeight:800}}>ADMINISTRATION</small><h1 style={{fontSize:34,margin:"8px 0"}}>Utilisateurs</h1><p style={{color:"#8094aa"}}>Recherche serveur par nom, email, téléphone ou ID, filtres et pagination.</p></header>
+  <section style={{background:"#0a1424",border:"1px solid rgba(148,163,184,.13)",borderRadius:18,padding:20}}><form onSubmit={submitSearch} style={{display:"grid",gridTemplateColumns:"minmax(260px,2fr) repeat(3,minmax(140px,1fr)) auto",gap:10,alignItems:"end"}}>
+   <label>Recherche (nom, email, téléphone ou ID)<input style={inputStyle} value={search} onChange={e=>setSearch(e.target.value)} placeholder="ex. +228..., email, UUID..."/></label>
+   <label>Statut<select style={inputStyle} value={status} onChange={e=>{setStatus(e.target.value);setPage(0)}}><option value="all">Tous</option><option value="active">Actifs</option><option value="blocked">Bloqués</option></select></label>
+   <label>KYC<select style={inputStyle} value={kyc} onChange={e=>{setKyc(e.target.value);setPage(0)}}><option value="all">Tous</option><option value="pending">En attente</option><option value="verified">Vérifié</option><option value="rejected">Refusé</option></select></label>
+   <label>Rôle<select style={inputStyle} value={admin} onChange={e=>{setAdmin(e.target.value);setPage(0)}}><option value="all">Tous</option><option value="admin">Admins</option><option value="non_admin">Non-admins</option></select></label><button type="submit" style={buttonStyle}>Rechercher</button></form>
+   <button type="button" onClick={reset} style={{marginTop:12,background:"transparent",color:"#9db1c8",border:0,cursor:"pointer"}}>Réinitialiser les filtres</button></section>
+  <section style={{marginTop:14,background:"#0a1424",border:"1px solid rgba(148,163,184,.13)",borderRadius:18,overflow:"hidden"}}><div style={{padding:18,display:"flex",justifyContent:"space-between",alignItems:"center"}}><strong>{result.total} utilisateur{result.total>1?"s":""}</strong><span style={{color:"#8094aa",fontSize:13}}>Page {currentPage} / {totalPages}</span></div>
+   {loading?<div style={{padding:30,color:"#8094aa"}}>Chargement…</div>:error?<div style={{padding:30,color:"#ff9c9c"}}>{error}</div>:result.items.length===0?<div style={{padding:30,color:"#8094aa"}}>Aucun utilisateur trouvé.</div>:<div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",minWidth:1050}}><thead><tr>{["Utilisateur","Email","Téléphone","KYC","Statut","Rôle","Créé le","Action"].map(h=><th key={h} style={{textAlign:"left",padding:14,color:"#8094aa",fontSize:12,borderTop:"1px solid rgba(148,163,184,.1)"}}>{h}</th>)}</tr></thead><tbody>{result.items.map(u=><tr key={u.id}><td style={{padding:14,borderTop:"1px solid rgba(148,163,184,.08)"}}><b>{u.full_name||"Sans nom"}</b><div style={{color:"#657b92",fontSize:11,marginTop:4}}>{u.id}</div></td><td style={{padding:14,borderTop:"1px solid rgba(148,163,184,.08)"}}>{u.email||"—"}</td><td style={{padding:14,borderTop:"1px solid rgba(148,163,184,.08)"}}>{u.phone||"—"}</td><td style={{padding:14,borderTop:"1px solid rgba(148,163,184,.08)"}}>{u.kyc_status||"—"}</td><td style={{padding:14,borderTop:"1px solid rgba(148,163,184,.08)"}}>{u.is_active?"Actif":"Bloqué"}</td><td style={{padding:14,borderTop:"1px solid rgba(148,163,184,.08)"}}>{u.is_admin?"Admin":(u.role||"user")}</td><td style={{padding:14,borderTop:"1px solid rgba(148,163,184,.08)"}}>{new Date(u.created_at).toLocaleDateString("fr-FR")}</td><td style={{padding:14,borderTop:"1px solid rgba(148,163,184,.08)"}}><a href={`/admin/users/${u.id}`} style={{color:"#72b4ff",textDecoration:"none",fontWeight:700}}>Voir</a></td></tr>)}</tbody></table></div>}
+   <div style={{padding:16,display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:"1px solid rgba(148,163,184,.1)"}}><button type="button" disabled={page===0||loading} onClick={()=>setPage(p=>Math.max(0,p-1))} style={{...buttonStyle,opacity:page===0?.45:1}}>← Précédent</button><span style={{color:"#8094aa",fontSize:13}}>{result.items.length?`${result.offset+1}–${result.offset+result.items.length} sur ${result.total}`:"0 résultat"}</span><button type="button" disabled={!result.has_more||loading} onClick={()=>setPage(p=>p+1)} style={{...buttonStyle,opacity:!result.has_more?.45:1}}>Suivant →</button></div>
+  </section></div></main>
 }
