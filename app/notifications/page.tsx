@@ -5,34 +5,4 @@ import { AppShell } from "@/components/navigation/AppShell";
 import { createClient } from "@/lib/supabase/client";
 
 type NotificationItem = { id: string; title: string; message: string | null; is_read: boolean; created_at: string };
-
-export default function NotificationsPage() {
-  const [items, setItems] = useState<NotificationItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    let active = true;
-    const load = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!active) return;
-      if (!user) { setError("Session expirée. Reconnectez-vous."); setLoading(false); return; }
-      const { data, error: queryError } = await supabase.from("notifications").select("id,title,message,is_read,created_at").order("created_at", { ascending: false }).limit(50);
-      if (!active) return;
-      if (queryError) setError(queryError.message); else setItems((data ?? []) as NotificationItem[]);
-      setLoading(false);
-    };
-    void load();
-    return () => { active = false; };
-  }, []);
-
-  async function markRead(id: string) {
-    const supabase = createClient();
-    const { error: updateError } = await supabase.rpc("mark_notification_read", { p_notification_id: id });
-    if (updateError) { setError(updateError.message); return; }
-    setItems(current => current.map(item => item.id === id ? { ...item, is_read: true } : item));
-  }
-
-  return <AppShell><section className="sp-page"><p className="sp-eyebrow">Centre d'alertes</p><h1 className="sp-title">Notifications</h1>{loading ? <section className="sp-section-card"><p className="sp-muted">Chargement…</p></section> : error ? <section className="sp-section-card"><p className="sp-form-error">{error}</p></section> : items.length === 0 ? <section className="sp-section-card sp-empty-list"><strong>Aucune notification</strong><span>Les nouvelles alertes apparaîtront ici.</span></section> : <section className="sp-notification-list">{items.map(item => <button key={item.id} className={`sp-notification-row${item.is_read ? " read" : ""}`} onClick={() => !item.is_read && markRead(item.id)}><span className="sp-notification-dot"/><span><strong>{item.title}</strong><small>{item.message ?? ""}</small><small>{new Date(item.created_at).toLocaleString("fr-FR")}</small></span></button>)}</section>}</section></AppShell>;
-}
+export default function NotificationsPage(){const [items,setItems]=useState<NotificationItem[]>([]);const [loading,setLoading]=useState(true);const [error,setError]=useState("");useEffect(()=>{let active=true;(async()=>{const s=createClient();const {data:{user}}=await s.auth.getUser();if(!active)return;if(!user){setError("Session expirée. Reconnectez-vous.");setLoading(false);return;}const {data,error:e}=await s.from("notifications").select("id,title,message,is_read,created_at").order("created_at",{ascending:false}).limit(50);if(!active)return;if(e)setError(e.message);else setItems((data??[]) as NotificationItem[]);setLoading(false)})();return()=>{active=false}},[]);async function markRead(id:string){const s=createClient();const {error:e}=await s.rpc("mark_notification_read",{p_notification_id:id});if(e){setError(e.message);return}setItems(x=>x.map(n=>n.id===id?{...n,is_read:true}:n))}return <AppShell><section className="sp-page"><p className="sp-eyebrow">Centre d'alertes</p><h1 className="sp-title">Notifications</h1>{loading?<div className="sp-page-loading" role="status" aria-label="Chargement"><span className="sp-loader"/></div>:error?<section className="sp-section-card"><p className="sp-form-error">{error}</p></section>:items.length===0?<section className="sp-section-card sp-empty-list"><strong>Aucune notification</strong><span>Les nouvelles alertes apparaîtront ici.</span></section>:<section className="sp-notification-list">{items.map(item=><button key={item.id} className={`sp-notification-row${item.is_read?" read":""}`} onClick={()=>!item.is_read&&markRead(item.id)}><span className="sp-notification-dot"/><span><strong>{item.title}</strong><small>{item.message??""}</small><small>{new Date(item.created_at).toLocaleString("fr-FR")}</small></span></button>)}</section>}</section></AppShell>}
