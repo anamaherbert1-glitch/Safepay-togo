@@ -4,88 +4,28 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-type Transaction = { id: string; account_id: string; seller_id: string | null; seller_phone: string; seller_country: string | null; description: string; amount: number | string; commission: number | string; currency: string; status: string; delivery_delay: string | null; conditions: string | null; created_at: string; updated_at: string; };
-type History = { id: string; from_status: string | null; to_status: string; reason: string | null; created_at: string };
+type Transaction = { id:string; account_id:string; seller_id:string|null; seller_phone:string; seller_country:string|null; description:string; amount:number|string; commission:number|string; currency:string; status:string; delivery_delay:string|null; conditions:string|null; created_at:string; updated_at:string; buyer_total:number|string|null; escrow_amount:number|string|null; seller_net:number|string|null; provider_code:string|null; payment_method:string|null };
+type History = { id:string; from_status:string|null; to_status:string; reason:string|null; created_at:string };
+type Snapshot = { gross_amount:number|string; provider_collection_fee:number|string; safepay_fee:number|string; payout_fee:number|string; total_customer_fee:number|string; buyer_total:number|string; escrow_amount:number|string; seller_gross:number|string; seller_net:number|string; provider_revenue:number|string; safepay_revenue:number|string; fee_payer:string; provider_code:string|null; payment_method:string|null; currency:string; configuration_version:number };
+const labels:Record<string,string>={pending:"En attente",funded:"Fonds sécurisés",delivered:"Livrée",completed:"Terminée",disputed:"Litige",cancelled:"Annulée"};
+const money=(v:number|string,currency:string)=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:currency.trim(),maximumFractionDigits:0}).format(Number(v));
 
-const labels: Record<string, string> = { pending: "En attente", funded: "Fonds sécurisés", delivered: "Livrée", completed: "Terminée", disputed: "Litige", cancelled: "Annulée" };
-
-export default function TransactionDetailPage() {
-  const params = useParams<{ id: string }>();
-  const router = useRouter();
-  const [tx, setTx] = useState<Transaction | null>(null);
-  const [history, setHistory] = useState<History[]>([]);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [isBuyer, setIsBuyer] = useState(false);
-  const [reason, setReason] = useState("");
-  const [disputeOpen, setDisputeOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-
-  async function load() {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setError("Session expirée. Reconnectez-vous."); return; }
-    setUserId(user.id);
-    const { data, error: txError } = await supabase.from("transactions").select("id,account_id,seller_id,seller_phone,seller_country,description,amount,commission,currency,status,delivery_delay,conditions,created_at,updated_at").eq("id", params.id).single();
-    if (txError) { setError(txError.message); return; }
-    const transaction = data as Transaction;
-    setTx(transaction);
-    const { data: buyerAccount } = await supabase.from("accounts").select("id").eq("id", transaction.account_id).eq("user_id", user.id).maybeSingle();
-    setIsBuyer(Boolean(buyerAccount));
-    const { data: events } = await supabase.from("transaction_status_history").select("id,from_status,to_status,reason,created_at").eq("transaction_id", params.id).order("created_at", { ascending: false });
-    setHistory((events ?? []) as History[]);
-  }
-
-  useEffect(() => { load(); }, [params.id]);
-
-  async function transition(toStatus: string, actionReason?: string) {
-    setError(""); setBusy(true);
-    try {
-      const supabase = createClient();
-      const { error: rpcError } = await supabase.rpc("transition_transaction", { p_transaction_id: params.id, p_to_status: toStatus, p_reason: actionReason || null });
-      if (rpcError) throw rpcError;
-      await load();
-    } catch (err) { setError(err instanceof Error ? err.message : "Action impossible."); } finally { setBusy(false); }
-  }
-
-  async function openDispute() {
-    if (!reason.trim()) { setError("Indiquez la raison du litige."); return; }
-    setError(""); setBusy(true);
-    try {
-      const supabase = createClient();
-      const { error: rpcError } = await supabase.rpc("open_dispute", { p_transaction_id: params.id, p_reason: "user_dispute", p_description: reason.trim() });
-      if (rpcError) throw rpcError;
-      setDisputeOpen(false); setReason(""); await load();
-    } catch (err) { setError(err instanceof Error ? err.message : "Impossible d'ouvrir le litige."); } finally { setBusy(false); }
-  }
-
-  if (error && !tx) return <main className="safepay-shell safepay-dashboard"><header className="sp-header"><button className="sp-back" onClick={() => router.back()} aria-label="Retour">←</button><strong>Transaction</strong></header><section className="sp-content"><p className="sp-form-error">{error}</p></section></main>;
-  if (!tx) return <main className="safepay-shell safepay-dashboard"><header className="sp-header"><button className="sp-back" onClick={() => router.back()} aria-label="Retour">←</button><strong>Transaction</strong></header><section className="sp-content"><p className="sp-muted">Chargement…</p></section></main>;
-
-  const isSeller = tx.seller_id === userId;
-  const total = Number(tx.amount) + Number(tx.commission);
-  const money = (value: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: tx.currency, maximumFractionDigits: 0 }).format(value);
-
-  return (
-    <main className="safepay-shell safepay-dashboard">
-      <header className="sp-header"><button className="sp-back" onClick={() => router.back()} aria-label="Retour">←</button><strong>Détail transaction</strong><span style={{ width: 36 }} /></header>
-      <section className="sp-content">
-        <section className="sp-section-card"><div className="sp-detail-status"><span className={`sp-status sp-status-${tx.status}`}>{labels[tx.status] ?? tx.status}</span><span>{new Date(tx.created_at).toLocaleString("fr-FR")}</span></div><h1 className="sp-detail-title">{tx.description}</h1><div className="sp-detail-amount">{money(Number(tx.amount))}</div><div className="sp-detail-grid"><div><span>Commission</span><strong>{money(Number(tx.commission))}</strong></div><div><span>Total bloqué</span><strong>{money(total)}</strong></div><div><span>Vendeur</span><strong>{tx.seller_phone}</strong></div><div><span>Pays</span><strong>{tx.seller_country ?? "—"}</strong></div></div></section>
-        {(tx.delivery_delay || tx.conditions) && <section className="sp-section-card"><h2>Détails convenus</h2>{tx.delivery_delay && <p><b>Délai :</b> {tx.delivery_delay}</p>}{tx.conditions && <p><b>Conditions :</b> {tx.conditions}</p>}</section>}
-        <section className="sp-section-card"><h2>Actions sécurisées</h2><div className="sp-action-stack">
-          {tx.status === "pending" && isBuyer && <button className="safepay-primary" disabled={busy} onClick={() => transition("funded", "Buyer confirmed SafePay escrow")}>Sécuriser les fonds</button>}
-          {tx.status === "pending" && isBuyer && <button className="sp-secondary-button" disabled={busy} onClick={() => transition("cancelled", "Buyer cancelled transaction")}>Annuler</button>}
-          {tx.status === "funded" && isSeller && <button className="safepay-primary" disabled={busy} onClick={() => transition("delivered", "Seller marked transaction delivered")}>Confirmer la livraison</button>}
-          {tx.status === "delivered" && isBuyer && <button className="safepay-primary" disabled={busy} onClick={() => transition("completed", "Buyer confirmed delivery")}>Confirmer et libérer les fonds</button>}
-          {(tx.status === "funded" || tx.status === "delivered") && (isBuyer || isSeller) && <button className="sp-secondary-button" disabled={busy} onClick={() => setDisputeOpen(true)}>Ouvrir un litige</button>}
-          {tx.status === "completed" && <p className="sp-success-note">Les fonds ont été libérés par le backend SafePay.</p>}
-          {tx.status === "cancelled" && <p className="sp-muted">Cette transaction est annulée.</p>}
-          {tx.status === "disputed" && <p className="sp-muted">Le dossier est en litige. La résolution doit passer par le système autorisé.</p>}
-        </div></section>
-        {disputeOpen && <section className="sp-section-card"><h2>Ouvrir un litige</h2><textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={4} placeholder="Expliquez clairement le problème…"/><div className="sp-inline-actions"><button className="sp-secondary-button" onClick={() => setDisputeOpen(false)}>Retour</button><button className="safepay-primary" disabled={busy} onClick={openDispute}>Confirmer le litige</button></div></section>}
-        <section className="sp-section-card"><h2>Historique</h2><div className="sp-history">{history.map((event) => <div key={event.id} className="sp-history-row"><span className="sp-history-dot"/><span><strong>{labels[event.to_status] ?? event.to_status}</strong><small>{event.reason ?? "Changement d'état"}</small><small>{new Date(event.created_at).toLocaleString("fr-FR")}</small></span></div>)}</div></section>
-        {error && <p className="sp-form-error" role="alert">{error}</p>}
-      </section>
-    </main>
-  );
+export default function TransactionDetailPage(){
+ const params=useParams<{id:string}>(); const router=useRouter(); const [tx,setTx]=useState<Transaction|null>(null); const [snapshot,setSnapshot]=useState<Snapshot|null>(null); const [history,setHistory]=useState<History[]>([]); const [userId,setUserId]=useState<string|null>(null); const [isBuyer,setIsBuyer]=useState(false); const [reason,setReason]=useState(""); const [disputeOpen,setDisputeOpen]=useState(false); const [busy,setBusy]=useState(false); const [error,setError]=useState("");
+ async function load(){const s=createClient(); const {data:{user}}=await s.auth.getUser(); if(!user){setError("Session expirée. Reconnectez-vous.");return;} setUserId(user.id); const {data,error:e}=await s.from("transactions").select("id,account_id,seller_id,seller_phone,seller_country,description,amount,commission,currency,status,delivery_delay,conditions,created_at,updated_at,buyer_total,escrow_amount,seller_net,provider_code,payment_method").eq("id",params.id).single(); if(e){setError(e.message);return;} const t=e?null:data as Transaction; if(!t)return; setTx(t); const {data:buyer}=await s.from("accounts").select("id").eq("id",t.account_id).eq("user_id",user.id).maybeSingle(); setIsBuyer(Boolean(buyer)); const {data:f}=await s.rpc("get_transaction_financial_breakdown",{p_transaction_id:params.id}); setSnapshot((f&&Object.keys(f).length)?f as Snapshot:null); const {data:events}=await s.from("transaction_status_history").select("id,from_status,to_status,reason,created_at").eq("transaction_id",params.id).order("created_at",{ascending:false}); setHistory((events??[]) as History[]); }
+ useEffect(()=>{load();},[params.id]);
+ async function transition(toStatus:string,actionReason?:string){setError("");setBusy(true);try{const s=createClient();const {error:e}=await s.rpc("transition_transaction",{p_transaction_id:params.id,p_to_status:toStatus,p_reason:actionReason||null});if(e)throw e;await load();}catch(err){setError(err instanceof Error?err.message:"Action impossible.");}finally{setBusy(false);}}
+ async function openDispute(){if(!reason.trim()){setError("Indiquez la raison du litige.");return;}setError("");setBusy(true);try{const s=createClient();const {error:e}=await s.rpc("open_dispute",{p_transaction_id:params.id,p_reason:"user_dispute",p_description:reason.trim()});if(e)throw e;setDisputeOpen(false);setReason("");await load();}catch(err){setError(err instanceof Error?err.message:"Impossible d'ouvrir le litige.");}finally{setBusy(false);}}
+ if(error&&!tx)return <main className="safepay-shell safepay-dashboard"><header className="sp-header"><button className="sp-back" onClick={()=>router.back()} aria-label="Retour">←</button><strong>Transaction</strong></header><section className="sp-content"><p className="sp-form-error">{error}</p></section></main>;
+ if(!tx)return <main className="safepay-shell safepay-dashboard"><header className="sp-header"><button className="sp-back" onClick={()=>router.back()} aria-label="Retour">←</button><strong>Transaction</strong></header><section className="sp-content"><p className="sp-muted">◔</p></section></main>;
+ const isSeller=tx.seller_id===userId; const snap=snapshot; const feePayer=snap?.fee_payer; const explanation=feePayer==="buyer"?"Le frais SafePay est payé par l'acheteur pour couvrir la sécurisation, l'escrow et la gestion des litiges.":feePayer==="seller"?"Le frais SafePay est payé par le vendeur pour couvrir le service de transaction sécurisé, l'escrow et la gestion des litiges.":"Le coût de protection SafePay est partagé entre l'acheteur et le vendeur.";
+ return <main className="safepay-shell safepay-dashboard"><header className="sp-header"><button className="sp-back" onClick={()=>router.back()} aria-label="Retour">←</button><strong>Détail transaction</strong><span style={{width:36}}/></header><section className="sp-content">
+  <section className="sp-section-card"><div className="sp-detail-status"><span className={`sp-status sp-status-${tx.status}`}>{labels[tx.status]??tx.status}</span><span>{new Date(tx.created_at).toLocaleString("fr-FR")}</span></div><h1 className="sp-detail-title">{tx.description}</h1><div className="sp-detail-amount">{money(tx.amount,tx.currency)}</div><div className="sp-detail-grid"><div><span>SafePay</span><strong>{money(snap?.safepay_fee??tx.commission,tx.currency)}</strong></div><div><span>Escrow</span><strong>{money(snap?.escrow_amount??tx.escrow_amount??Number(tx.amount)+Number(tx.commission),tx.currency)}</strong></div><div><span>Vendeur</span><strong>{tx.seller_phone}</strong></div><div><span>Pays</span><strong>{tx.seller_country??"—"}</strong></div></div></section>
+  {snap&&<section className="sp-section-card"><h2>Transparence financière</h2><div className="sp-detail-grid"><div><span>Prix</span><strong>{money(snap.gross_amount,snap.currency)}</strong></div><div><span>Frais prestataire</span><strong>{money(snap.provider_collection_fee,snap.currency)}</strong></div><div><span>Protection SafePay</span><strong>{money(snap.safepay_fee,snap.currency)}</strong></div><div><span>Frais de retrait</span><strong>{money(snap.payout_fee,snap.currency)}</strong></div><div><span>Total acheteur</span><strong>{money(snap.buyer_total,snap.currency)}</strong></div><div><span>Net vendeur</span><strong>{money(snap.seller_net,snap.currency)}</strong></div></div><p style={{marginTop:14,fontSize:13,color:"#8094aa"}}><b>Pourquoi ce frais ?</b><br/>{explanation}</p><p style={{marginTop:8,fontSize:12,color:"#8094aa"}}>Configuration financière v{snap.configuration_version}. Cette valeur est figée pour cette transaction et ne change pas si l'Admin modifie les règles plus tard.</p></section>}
+  {(tx.delivery_delay||tx.conditions)&&<section className="sp-section-card"><h2>Détails convenus</h2>{tx.delivery_delay&&<p><b>Délai :</b> {tx.delivery_delay}</p>}{tx.conditions&&<p><b>Conditions :</b> {tx.conditions}</p>}</section>}
+  <section className="sp-section-card"><h2>Actions sécurisées</h2><div className="sp-action-stack">{tx.status==="pending"&&isBuyer&&<button className="safepay-primary" disabled={busy} onClick={()=>transition("funded","Buyer confirmed SafePay escrow")}>Sécuriser les fonds</button>}{tx.status==="pending"&&isBuyer&&<button className="sp-secondary-button" disabled={busy} onClick={()=>transition("cancelled","Buyer cancelled transaction")}>Annuler</button>}{tx.status==="funded"&&isSeller&&<button className="safepay-primary" disabled={busy} onClick={()=>transition("delivered","Seller marked transaction delivered")}>Confirmer la livraison</button>}{tx.status==="delivered"&&isBuyer&&<button className="safepay-primary" disabled={busy} onClick={()=>transition("completed","Buyer confirmed delivery")}>Confirmer et libérer les fonds</button>}{(tx.status==="funded"||tx.status==="delivered")&&(isBuyer||isSeller)&&<button className="sp-secondary-button" disabled={busy} onClick={()=>setDisputeOpen(true)}>Ouvrir un litige</button>}{tx.status==="completed"&&<p className="sp-success-note">Les fonds ont été libérés par le backend SafePay.</p>}{tx.status==="cancelled"&&<p className="sp-muted">Cette transaction est annulée.</p>}{tx.status==="disputed"&&<p className="sp-muted">Le dossier est en litige. La résolution doit passer par le système autorisé.</p>}</div></section>
+  {disputeOpen&&<section className="sp-section-card"><h2>Ouvrir un litige</h2><textarea value={reason} onChange={e=>setReason(e.target.value)} rows={4} placeholder="Expliquez clairement le problème…"/><div className="sp-inline-actions"><button className="sp-secondary-button" onClick={()=>setDisputeOpen(false)}>Retour</button><button className="safepay-primary" disabled={busy} onClick={openDispute}>Confirmer le litige</button></div></section>}
+  <section className="sp-section-card"><h2>Historique</h2><div className="sp-history">{history.map(event=><div key={event.id} className="sp-history-row"><span className="sp-history-dot"/><span><strong>{labels[event.to_status]??event.to_status}</strong><small>{event.reason??"Changement d'état"}</small><small>{new Date(event.created_at).toLocaleString("fr-FR")}</small></span></div>)}</div></section>
+  {error&&<p className="sp-form-error" role="alert">{error}</p>}
+ </section></main>;
 }
