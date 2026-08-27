@@ -1,0 +1,35 @@
+/* SafePay Admin — visual system polish */
+:root{
+  --sp-bg:#050b14;--sp-surface:#0a1422;--sp-surface-2:#0e1b2d;--sp-border:rgba(126,181,239,.16);
+  --sp-text:#f5f9ff;--sp-muted:#8298b1;--sp-blue:#1683ff;--sp-blue-soft:#63b5ff;
+  --sp-green:#39d98a;--sp-shadow:0 20px 55px rgba(0,0,0,.22)
+}
+.adm-app{min-height:100vh;background:radial-gradient(900px 420px at 72% -8%,rgba(22,131,255,.16),transparent 60%),linear-gradient(145deg,#040a12 0%,#071322 58%,#06101b 100%)}
+.adm-sidebar{width:250px;padding:18px 12px;background:rgba(3,10,19,.97);border-right:1px solid rgba(99,181,255,.12);box-shadow:16px 0 45px rgba(0,0,0,.18)}
+.adm-brand{padding:4px 9px 22px}.adm-brand-mark,.adm-logo{width:42px;height:42px;border-radius:12px}.adm-brand strong{font-size:15px}.adm-brand span{font-size:8px}
+.adm-nav-label{padding:15px 10px 7px;font-size:8px;color:#58708b}
+.adm-sidebar nav{gap:3px}.adm-sidebar nav button{min-height:42px;padding:8px 10px;border-radius:10px;gap:10px}.adm-sidebar nav button b{font-size:10.5px}.adm-sidebar nav button small{font-size:7.5px}.adm-sidebar nav button.active{box-shadow:inset 3px 0 0 #4ca8ff,0 7px 22px rgba(0,0,0,.16)}
+.adm-main{width:calc(100% - 250px);margin-left:250px}.adm-header{height:82px;padding:16px 30px;background:rgba(4,12,22,.84)}.adm-heading h1{font-size:23px}.adm-content{padding:26px 30px 60px;max-width:1560px}
+.adm-hero{padding:27px 30px;border-radius:22px;background:linear-gradient(135deg,rgba(14,32,54,.96),rgba(7,17,30,.94));box-shadow:var(--sp-shadow)}.adm-hero h2{font-size:27px;margin:0 0 8px}.adm-hero p{max-width:720px;color:#9aacc0;line-height:1.6}
+.adm-kpis,.adm-kpis-three,.adm-quick{gap:14px}.adm-kpi{min-height:112px;padding:18px!important;border-radius:16px;background:linear-gradient(145deg,#0d1e32,#091625);border:1px solid var(--sp-border);box-shadow:0 12px 30px rgba(0,0,0,.15)}.adm-kpi strong{font-size:21px}.adm-kpi h3{font-size:10px;color:#a9bad0}.adm-kpi p,.adm-kpi small{font-size:9px;color:#7890a9}
+.adm-panel,.adm-form-panel,.adm-setting,.adm-security-grid>div,.adm-table-panel{border:1px solid var(--sp-border);border-radius:16px;background:linear-gradient(145deg,rgba(12,27,46,.94),rgba(7,17,30,.92));box-shadow:0 12px 35px rgba(0,0,0,.14)}
+.adm-panel-head{padding:18px 20px}.adm-panel-head h2,.adm-section-intro h2,.adm-module-intro h2{font-size:20px}.adm-panel-head p,.adm-section-intro p,.adm-module-intro p{color:#7890a9;font-size:10px}
+.adm-quick{margin-top:10px}.adm-quick button{min-height:76px;padding:14px 16px!important;border:1px solid var(--sp-border);border-radius:13px;background:rgba(7,19,33,.9);transition:.2s}.adm-quick button:hover{transform:translateY(-2px);border-color:rgba(99,181,255,.35);box-shadow:0 12px 28px rgba(0,0,0,.18)}
+.adm-table-panel{overflow:hidden}.adm-table-panel table{min-width:760px}th{height:40px;background:#091a2d;color:#a9bdd3;font-size:9px}td{height:42px;font-size:9px;color:#d5e1ed}
+.adm-settings-grid{gap:14px}.adm-setting{min-height:118px;padding:20px}.adm-setting h3{font-size:12px}.adm-setting p{font-size:9px;color:#7d94ad;line-height:1.55}
+.adm-number input,.adm-form-grid input,.adm-form-grid textarea,.adm-data-toolbar input,.adm-data-toolbar select{min-height:40px;border-radius:10px;background:#061322;border:1px solid rgba(126,181,239,.16);color:#eef6ff}.adm-primary,.adm-number button,.adm-access button{min-height:40px;border-radius:10px;background:linear-gradient(135deg,#2998ff,#075ed8);font-weight:800}
+.adm-live{font-size:8px}.adm-refresh{width:36px;height:36px;border-radius:10px}.adm-side-footer{margin-top:12px}
+/* Keep the admin experience readable on narrow screens. */
+@media(max-width:1100px){
+ .adm-sidebar{width:282px;transform:translateX(-110%)!important;transition:transform .22s ease}.adm-sidebar.open{transform:translateX(0)!important}
+ .adm-main{width:100%!important;margin-left:0!important}.adm-mobile-toggle{display:grid!important}
+ .adm-header{height:72px;padding:12px 18px}.adm-content{padding:20px 18px 44px}
+ .adm-kpis,.adm-kpis-three{grid-template-columns:repeat(2,minmax(0,1fr))!important}.adm-quick{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:640px){
+ .adm-header{height:66px;padding:10px 13px}.adm-heading h1{font-size:18px}.adm-content{padding:14px 12px 32px}
+ .adm-hero{padding:20px 17px;border-radius:16px}.adm-hero h2{font-size:21px}
+ .adm-kpis,.adm-kpis-three,.adm-quick{grid-template-columns:1fr!important;gap:10px}.adm-kpi{min-height:92px;padding:15px!important}.adm-kpi strong{font-size:20px}.adm-quick button{min-height:62px}
+ .adm-module-intro h2,.adm-section-intro h2{font-size:18px}.adm-panel-head{padding:15px 16px}.adm-table-panel{overflow-x:auto}
+ .adm-sidebar{width:min(290px,88vw)}
+}
