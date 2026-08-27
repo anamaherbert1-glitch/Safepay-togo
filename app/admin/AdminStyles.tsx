@@ -5,13 +5,45 @@ export default function AdminStyles() {
 .adm-control-center,.adm-center-control,.admin-control-center,[data-admin-control-center],.adm-bottom-controls{display:none!important}
 .adm-side-footer{background:linear-gradient(135deg,rgba(13,31,51,.72),rgba(8,20,35,.72));border:1px solid rgba(102,180,255,.10);border-radius:14px;padding:10px;margin-top:14px}
 .adm-settings-grid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}.adm-setting{position:relative;overflow:hidden}.adm-setting:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(#4da9ff,#075ed8);opacity:.65}.adm-sidebar nav button:nth-child(1){margin-top:2px}.adm-sidebar nav button.active b{font-weight:850}.adm-sidebar nav button.active svg{color:#66b4ff}
-/* Structural layout fix: force dashboard KPI/action groups to be real grids. */
 .adm-kpis,.adm-kpis-three,.adm-quick{display:grid!important;width:100%;min-width:0;align-items:stretch}.adm-kpi{min-width:0;overflow:hidden;padding:18px!important}.adm-kpi h3,.adm-kpi strong{line-height:1.15}.adm-kpi strong{font-size:20px}.adm-kpi p,.adm-kpi small{line-height:1.35}.adm-quick{gap:10px}.adm-quick button{min-width:0;min-height:74px;padding:14px 15px!important;display:flex;align-items:center;justify-content:space-between;gap:10px;white-space:normal}.adm-quick button b{line-height:1.25}.adm-quick button small{display:block;margin-top:3px;line-height:1.25}.adm-hero{overflow:hidden}.adm-hero-status{white-space:nowrap}.adm-module-intro,.adm-section-intro{gap:16px}.adm-panel-head{gap:14px}.adm-table-panel{overflow:hidden}.adm-table-panel table{min-width:760px}.adm-main{overflow-x:hidden}.adm-content>*{min-width:0}
-/* Finance page: keep the same visual system while allowing its own responsive layout. */
 .financePage{min-height:100vh;background:radial-gradient(circle at 80% 0%,rgba(22,119,255,.14),transparent 32%),#050b16;color:#f1f6ff}.financePage .financeWrap{max-width:1400px;margin:auto;padding:30px 34px 56px}.financePage h1,.financePage h2,.financePage h3{letter-spacing:-.025em}.financePage .card{border:1px solid rgba(102,180,255,.14)!important;box-shadow:0 18px 50px rgba(0,0,0,.18)!important}.financePage .kpi strong{font-size:24px}.financePage .method{transition:.18s ease}.financePage .method:hover{border-color:rgba(102,180,255,.28)!important;transform:translateY(-1px)}
 @media(max-width:1200px){.adm-sidebar{width:230px;padding:16px 10px}.adm-main{width:calc(100% - 230px);margin-left:230px}.adm-content{padding:24px 22px 48px}.adm-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}.adm-kpis-three{grid-template-columns:repeat(3,minmax(0,1fr))!important}.adm-quick{grid-template-columns:repeat(3,minmax(0,1fr))!important}.adm-sidebar nav b{font-size:10px}.adm-sidebar nav small{font-size:7.5px}.adm-brand strong{font-size:14px}.financePage .financeWrap{padding:24px 22px 48px}}
-@media(max-width:900px){.adm-sidebar{transform:translateX(-100%);transition:.22s ease;width:280px;box-shadow:30px 0 80px rgba(0,0,0,.3)}.adm-sidebar.open{transform:translateX(0)}.adm-main{width:100%;margin-left:0}.adm-header{padding:18px 18px;height:82px}.adm-mobile-toggle{display:grid}.adm-header-right .adm-live{display:none}.adm-heading h1{font-size:21px}.adm-content{padding:18px 16px 42px}.adm-hero{padding:24px 20px}.adm-kpis,.adm-kpis-three{grid-template-columns:repeat(2,minmax(0,1fr))!important}.adm-quick{grid-template-columns:repeat(2,minmax(0,1fr))!important}.adm-grid-two{grid-template-columns:1fr}.adm-settings-grid,.adm-security-grid,.adm-form-grid{grid-template-columns:1fr}.adm-section-intro,.adm-module-intro{display:block}.adm-lock,.adm-readonly{display:inline-flex;margin-top:13px}.adm-data-toolbar{flex-wrap:wrap}.adm-search{flex-basis:100%}.financePage .financeWrap{padding:20px 18px 40px}.financePage .kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}.financePage .grid2{grid-template-columns:1fr}.financePage .methodGrid{grid-template-columns:1fr 1fr}.financePage .methodGrid>div:first-child{grid-column:1/-1}}
-@media(max-width:560px){.adm-content{padding:14px 12px 34px}.adm-header{padding:14px 12px}.adm-hero{padding:20px 16px;border-radius:18px}.adm-hero h2{font-size:22px}.adm-kpis,.adm-kpis-three,.adm-quick{grid-template-columns:1fr!important}.adm-kpi{padding:16px!important}.adm-kpi strong{font-size:21px}.adm-quick button{min-height:62px}.adm-heading p{display:none}.adm-data-toolbar>select{flex:1}.adm-count{width:100%;margin-left:0}.adm-number{flex-wrap:wrap;justify-content:flex-end}.adm-number input{width:90px}.adm-number button{width:100%;margin-top:4px}.financePage .financeWrap{padding:16px 12px 34px}.financePage .kpis,.financePage .formGrid,.financePage .simGrid{grid-template-columns:1fr!important}.financePage .methodGrid{grid-template-columns:1fr!important}.financePage .methodGrid>div:first-child{grid-column:auto}}
+@media(max-width:1100px){
+  .adm-sidebar{width:286px;transform:translateX(-105%);transition:transform .22s ease;box-shadow:30px 0 90px rgba(0,0,0,.45)}
+  .adm-sidebar.open{transform:translateX(0)}
+  .adm-main{width:100%;margin-left:0}
+  .adm-mobile-toggle{display:grid;flex:none}
+  .adm-header{height:78px;padding:14px 18px}
+  .adm-header-right .adm-live{display:none}
+  .adm-content{padding:22px 20px 48px}
+  .adm-kpis,.adm-kpis-three{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .adm-quick{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .adm-grid-two{grid-template-columns:1fr!important}
+  .adm-settings-grid,.adm-security-grid,.adm-form-grid{grid-template-columns:1fr}
+  .financePage .financeWrap{padding:22px 20px 44px}
+}
+@media(max-width:700px){
+  .adm-content{padding:16px 14px 36px}
+  .adm-header{padding:12px 14px;height:70px}
+  .adm-heading h1{font-size:19px}
+  .adm-heading p{display:none}
+  .adm-hero{padding:20px 18px;border-radius:18px}
+  .adm-hero h2{font-size:22px}
+  .adm-kpis,.adm-kpis-three,.adm-quick{grid-template-columns:1fr!important}
+  .adm-kpi{padding:16px!important}
+  .adm-kpi strong{font-size:21px}
+  .adm-quick button{min-height:64px}
+  .adm-data-toolbar{flex-wrap:wrap}
+  .adm-search{flex-basis:100%}
+  .adm-count{width:100%;margin-left:0}
+  .adm-number{flex-wrap:wrap;justify-content:flex-end}
+  .adm-number input{width:90px}
+  .adm-number button{width:100%;margin-top:4px}
+  .financePage .financeWrap{padding:16px 14px 34px}
+  .financePage .kpis,.financePage .formGrid,.financePage .simGrid{grid-template-columns:1fr!important}
+  .financePage .methodGrid{grid-template-columns:1fr!important}
+  .financePage .methodGrid>div:first-child{grid-column:auto}
+}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
   `}</style>;
 }
