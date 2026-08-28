@@ -1,16 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import AdminOverview from "./AdminOverview";
 
 type Row = Record<string, any>;
 type Module = "overview" | "users" | "kyc" | "transactions" | "wallets" | "ledger" | "deposits" | "withdrawals" | "disputes" | "support" | "notifications" | "revenue" | "invoices" | "settings" | "features" | "audit" | "admins" | "security";
 
+const labels: Record<Module, string> = {
+  overview:"Vue générale",users:"Utilisateurs",kyc:"KYC",transactions:"Transactions",wallets:"Wallets",ledger:"Ledger",deposits:"Dépôts",withdrawals:"Retraits",disputes:"Litiges",support:"Support",notifications:"Notifications",revenue:"Revenus",invoices:"Factures",settings:"Paramètres",features:"Fonctionnalités",audit:"Audit logs",admins:"Administrateurs",security:"Sécurité"
+};
+
 export default function AdminVisualLayer() {
   const pathname = usePathname();
-  const router = useRouter();
   const [summary, setSummary] = useState<Row>({});
   const [analytics, setAnalytics] = useState<Row[]>([]);
   const [days, setDays] = useState(7);
@@ -19,22 +22,26 @@ export default function AdminVisualLayer() {
   useEffect(() => {
     if (pathname !== "/admin") return;
     let cancelled = false;
-    (async () => {
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const load = async () => {
       const s = createClient();
       const { data: { user } } = await s.auth.getUser();
       if (!user) return;
       const gate = await s.rpc("is_admin");
       if (gate.error || !gate.data) return;
-      const [stats, series] = await Promise.all([
-        s.rpc("admin_dashboard_stats"),
-        s.rpc("admin_analytics_timeseries", { p_days: 7 }),
-      ]);
+      const [stats, series] = await Promise.all([s.rpc("admin_dashboard_stats"), s.rpc("admin_analytics_timeseries", { p_days: 7 })]);
       if (cancelled) return;
       if (stats.data) setSummary(stats.data);
       if (Array.isArray(series.data)) setAnalytics(series.data);
       setReady(true);
-    })();
-    return () => { cancelled = true; };
+    };
+    load();
+    timer = setInterval(() => {
+      const active = document.querySelector(".adm-sidebar nav button.active")?.textContent?.trim() ?? "";
+      if (active && !active.includes(labels.overview)) setReady(false);
+      if (active && active.includes(labels.overview)) setReady(true);
+    }, 250);
+    return () => { cancelled = true; if (timer) clearInterval(timer); };
   }, [pathname]);
 
   async function changeDays(next: number) {
@@ -43,20 +50,13 @@ export default function AdminVisualLayer() {
     if (Array.isArray(r.data)) setAnalytics(r.data);
   }
 
-  if (pathname !== "/admin" || !ready) return null;
-
   const navigate = (module: Module) => {
     if (module === "overview") return;
-    const paths: Record<string, string> = {
-      users: "/admin?module=users", kyc: "/admin?module=kyc", transactions: "/admin?module=transactions",
-      wallets: "/admin?module=wallets", ledger: "/admin?module=ledger", deposits: "/admin?module=deposits",
-      withdrawals: "/admin?module=withdrawals", disputes: "/admin?module=disputes", support: "/admin?module=support",
-      notifications: "/admin?module=notifications", revenue: "/admin?module=revenue", invoices: "/admin?module=invoices",
-      settings: "/admin?module=settings", features: "/admin?module=features", audit: "/admin?module=audit",
-      admins: "/admin?module=admins", security: "/admin?module=security",
-    };
-    router.push(paths[module] ?? "/admin");
+    const target = labels[module];
+    const button = Array.from(document.querySelectorAll<HTMLButtonElement>(".adm-sidebar nav button")).find((b) => b.textContent?.includes(target));
+    if (button) button.click();
   };
 
+  if (pathname !== "/admin" || !ready) return null;
   return <div className="sp-admin-visual-layer"><AdminOverview summary={summary} analytics={analytics} days={days} setDays={changeDays} navigate={navigate}/></div>;
 }
