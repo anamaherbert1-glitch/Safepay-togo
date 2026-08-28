@@ -1,0 +1,73 @@
+/* SafePay Admin — module screen polish
+   This layer intentionally preserves the approved overview design and only improves
+   the existing sidebar modules. No data/RPC behavior is changed here.
+*/
+.adm-module-intro{padding:4px 2px 0;margin-bottom:18px;align-items:flex-start}
+.adm-module-intro h2{font-size:28px;line-height:1.08;margin:5px 0 7px}
+.adm-module-intro p{max-width:900px;font-size:11px;line-height:1.55;color:#879db4}
+.adm-data{display:grid;gap:12px}
+.adm-data-toolbar{position:relative;display:grid;grid-template-columns:minmax(240px,1fr) auto auto;align-items:center;gap:9px;padding:10px;background:linear-gradient(145deg,rgba(13,29,48,.96),rgba(7,17,29,.96));border:1px solid rgba(137,185,232,.14);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.14)}
+.adm-data-toolbar>div{min-width:0}
+.adm-search{max-width:none!important}
+.adm-search input{width:100%!important;min-width:0!important}
+.adm-data-toolbar select{min-width:150px}
+.adm-count{padding:0 5px}
+.adm-table-panel{border-radius:16px!important;background:linear-gradient(145deg,rgba(12,27,46,.97),rgba(7,17,30,.96))!important}
+.adm-table-wrap{scrollbar-width:thin}
+.adm-table-panel table{min-width:760px}
+.adm-table-panel th{height:46px!important;padding:0 14px!important;font-size:8px!important;background:#091a2d!important;color:#8ea7be!important}
+.adm-table-panel td{height:58px!important;padding:8px 14px!important;font-size:9px!important;color:#d7e3ee!important}
+.adm-table-panel tbody tr:first-child td{border-top:0!important}
+.adm-table-panel tbody tr:hover td{background:rgba(47,140,255,.045)!important}
+.adm-table-panel td .adm-status,.adm-status{display:inline-flex;align-items:center;min-height:24px;padding:0 8px;border-radius:999px;background:rgba(47,140,255,.09);border:1px solid rgba(82,157,255,.14);color:#9bc8f2;font-size:8px;font-weight:800}
+.adm-table-panel td .adm-status.success,.adm-status.success{background:rgba(57,217,138,.08);border-color:rgba(57,217,138,.16);color:#70dfaa}
+.adm-table-panel td .adm-status.danger,.adm-status.danger{background:rgba(255,100,119,.08);border-color:rgba(255,100,119,.16);color:#ff8b9a}
+.adm-table-panel td .adm-status.warning,.adm-status.warning{background:rgba(246,173,50,.08);border-color:rgba(246,173,50,.16);color:#f5c15e}
+.adm-empty{min-height:250px;display:grid;place-items:center;padding:42px 20px!important}
+.adm-pagination{border-top:1px solid rgba(137,185,232,.08);background:rgba(4,12,22,.25);padding:12px 14px!important}
+.adm-setting,.adm-form-panel,.adm-security-grid>div{box-shadow:0 12px 32px rgba(0,0,0,.13)!important}
+.adm-settings-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.adm-setting{position:relative;overflow:hidden}
+.adm-setting:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#4aa5ff,#1267d8);opacity:.75}
+.adm-form-grid{gap:12px!important}
+.adm-primary,.adm-actions button,.adm-access button,.adm-number button{transition:.18s ease}
+.adm-primary:hover,.adm-actions button:hover,.adm-access button:hover,.adm-number button:hover{transform:translateY(-1px);filter:brightness(1.08)}
+.adm-modal-backdrop{backdrop-filter:blur(8px)}
+/* Desktop module cards: a clean hierarchy instead of a wall of text. */
+.adm-module-card{padding:0;overflow:hidden}
+.adm-module-card>header{padding:17px 19px;border-bottom:1px solid rgba(137,185,232,.08);background:rgba(9,25,42,.45)}
+.adm-module-card>header h3{margin:0;font-size:15px}
+.adm-module-card>header p{margin:5px 0 0;color:#738ba4;font-size:9px}
+/* Mobile: tables become readable stacked records instead of a clipped desktop table. */
+@media(max-width:760px){
+  .adm-module-intro{display:block;margin-bottom:14px}
+  .adm-module-intro h2{font-size:23px}
+  .adm-module-intro p{font-size:10px;max-width:none}
+  .adm-readonly,.adm-lock{margin-top:10px}
+  .adm-data-toolbar{grid-template-columns:1fr;gap:8px;padding:9px}
+  .adm-data-toolbar>div{width:100%}
+  .adm-data-toolbar select{width:100%;min-width:0}
+  .adm-count{margin:0;padding:3px 2px;font-size:8px}
+  .adm-table-panel{overflow:visible!important;background:transparent!important;border:0!important;box-shadow:none!important}
+  .adm-table-wrap{overflow:visible!important}
+  .adm-table-panel table,.adm-table-panel thead,.adm-table-panel tbody,.adm-table-panel tr,.adm-table-panel td{display:block;width:100%;min-width:0!important}
+  .adm-table-panel thead{display:none}
+  .adm-table-panel tbody{display:grid;gap:9px}
+  .adm-table-panel tbody tr{padding:11px 12px;border:1px solid rgba(137,185,232,.13);border-radius:14px;background:linear-gradient(145deg,rgba(12,27,46,.98),rgba(7,17,30,.98));box-shadow:0 10px 28px rgba(0,0,0,.12)}
+  .adm-table-panel tbody tr:hover{border-color:rgba(82,157,255,.3)}
+  .adm-table-panel td{height:auto!important;min-height:0!important;padding:7px 0!important;border:0!important;display:grid;grid-template-columns:minmax(105px,42%) 1fr;gap:10px;align-items:center;max-width:none!important;text-align:right;font-size:9px!important}
+  .adm-table-panel td:before{content:attr(data-label);color:#6f879f;font-size:7px;font-weight:850;letter-spacing:.07em;text-transform:uppercase;text-align:left}
+  .adm-table-panel td.action-col{display:flex;justify-content:flex-end;padding-top:10px!important;margin-top:3px;border-top:1px solid rgba(137,185,232,.07)!important}
+  .adm-table-panel td.action-col:before{display:none}
+  .adm-actions{justify-content:flex-end}
+  .adm-empty{min-height:210px}
+  .adm-settings-grid{grid-template-columns:1fr!important}
+}
+@media(max-width:480px){
+  .adm-content{padding:12px 10px 28px!important}
+  .adm-header{padding:9px 10px!important}
+  .adm-header-right .adm-live{display:none}
+  .adm-table-panel td{grid-template-columns:40% 60%;font-size:8.5px!important}
+  .adm-actions{width:100%}
+  .adm-actions button{min-height:34px!important}
+}
