@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
 
+# One-off migration helper for the Admin Overview.
 jobs:
   upgrade:
     if: github.actor != 'github-actions[bot]'
