@@ -1,7 +1,13 @@
 "use client";
 
-import FinanceCommission from "./FinanceCommission";
+import AdminDashboardLegacy from "./AdminDashboardLegacy";
+import FinanceNavigation from "./FinanceNavigation";
 
 export default function AdminPage() {
-  return <FinanceCommission />;
+  return (
+    <>
+      <AdminDashboardLegacy />
+      <FinanceNavigation />
+    </>
+  );
 }
