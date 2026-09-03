@@ -31,7 +31,9 @@ export default function AdminControlEnhancements() {
   const [detail, setDetail] = useState<Row | null>(null);
   const [evidence, setEvidence] = useState<Row[]>([]);
   const [events, setEvents] = useState<Row[]>([]);
-  const [message, setMessage] = useState("");
+  const [supportMessages, setSupportMessages] = useState<Row[]>([]);
+  const [draft, setDraft] = useState("");
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [resolution, setResolution] = useState("refund_buyer");
   const [resolutionText, setResolutionText] = useState("");
@@ -63,6 +65,12 @@ export default function AdminControlEnhancements() {
           (tr as HTMLElement).onclick = (ev) => {
             if ((ev.target as HTMLElement)?.closest("button,a,input,select")) return;
             setSelected(row);
+            setDetail(null);
+            setSupportMessages([]);
+            setDraft("");
+            setNotice("");
+            if (active === "disputes") void openDispute(row);
+            if (active === "support") void openSupport(row);
           };
         });
       }
@@ -71,8 +79,8 @@ export default function AdminControlEnhancements() {
   }, [active]);
 
   async function openDispute(row: Row) {
-    setSelected(row); setDetail(null); setEvidence([]); setEvents([]); setMessage("");
     const s = createClient();
+    setSelected(row); setDetail(null); setEvidence([]); setEvents([]); setDraft(""); setNotice("");
     const [d, e, ev] = await Promise.all([
       s.from("disputes").select("*").eq("id", row.id).maybeSingle(),
       s.from("dispute_events").select("*").eq("dispute_id", row.id).order("created_at", { ascending: true }),
@@ -81,22 +89,38 @@ export default function AdminControlEnhancements() {
     if (d.data) setDetail(d.data);
     if (e.data) setEvents(e.data);
     if (ev.data) setEvidence(ev.data);
+    if (d.error) setNotice(d.error.message);
+  }
+
+  async function openSupport(row: Row) {
+    setSelected(row); setDraft(""); setNotice(""); setSupportMessages([]);
+    const r = await createClient().rpc("admin_get_support_ticket_detail", { p_ticket_id: row.id });
+    if (r.error) setNotice(r.error.message);
+    else setSupportMessages(Array.isArray(r.data?.messages) ? r.data.messages : []);
   }
 
   async function resolveDispute() {
     if (!selected?.id) return;
-    setBusy(true); setMessage("");
+    setBusy(true); setNotice("");
     const r = await createClient().rpc("admin_resolve_dispute", { p_dispute_id: selected.id, p_resolution: resolutionText.trim() || "Décision administrative SafePay", p_resolution_action: resolution });
     setBusy(false);
-    if (r.error) setMessage(r.error.message); else setMessage("Litige traité et décision enregistrée dans SafePay.");
+    if (r.error) setNotice(r.error.message); else setNotice("Litige traité et décision enregistrée dans SafePay.");
   }
 
   async function sendSupport() {
-    if (!selected?.id || !message.trim()) return;
-    setBusy(true);
-    const r = await createClient().rpc("admin_send_support_message", { p_ticket_id: selected.id, p_message: message.trim() });
+    if (!selected?.id || !draft.trim()) return;
+    setBusy(true); setNotice("");
+    const sent = draft.trim();
+    const r = await createClient().rpc("admin_send_support_message", { p_ticket_id: selected.id, p_message: sent });
+    if (r.error) {
+      setNotice(r.error.message);
+    } else {
+      setDraft("");
+      const fresh = await createClient().rpc("admin_get_support_ticket_detail", { p_ticket_id: selected.id });
+      if (!fresh.error) setSupportMessages(Array.isArray(fresh.data?.messages) ? fresh.data.messages : []);
+      setNotice("Réponse envoyée et ajoutée à l’historique.");
+    }
     setBusy(false);
-    if (r.error) setMessage(r.error.message); else { setMessage("Réponse envoyée."); setMessage(""); }
   }
 
   const userFields = useMemo(() => selected ? [
@@ -106,14 +130,12 @@ export default function AdminControlEnhancements() {
   return <>
     <style>{`.adm-sidebar nav button{ } .safepay-audit-trigger{position:fixed;right:22px;top:22px;z-index:70;width:40px;height:40px;border-radius:12px;border:1px solid rgba(148,163,184,.2);background:#0b1a2d;color:#dbeafe;font-size:21px;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.2)} @media(max-width:600px){.safepay-audit-trigger{right:12px;top:12px}}`}</style>
     <button className="safepay-audit-trigger" aria-label="Plus d'options" onClick={() => setMenu((v) => !v)}>⋯</button>
-    {menu && <div style={{ position: "fixed", right: 22, top: 68, zIndex: 71, background: "#0b1a2d", border: "1px solid rgba(96,177,255,.2)", borderRadius: 12, padding: 8, minWidth: 190, boxShadow: "0 18px 50px rgba(0,0,0,.3)" }}>
-      <button style={{ ...css.secondary, width: "100%" }} onClick={() => { setMenu(false); window.dispatchEvent(new CustomEvent("safepay-admin-open-audit")); }}>Ouvrir les Audit Logs</button>
-    </div>}
+    {menu && <div style={{ position: "fixed", right: 22, top: 68, zIndex: 71, background: "#0b1a2d", border: "1px solid rgba(96,177,255,.2)", borderRadius: 12, padding: 8, minWidth: 190, boxShadow: "0 18px 50px rgba(0,0,0,.3)" }}><button style={{ ...css.secondary, width: "100%" }} onClick={() => { setMenu(false); window.dispatchEvent(new CustomEvent("safepay-admin-open-audit")); }}>Ouvrir les Audit Logs</button></div>}
 
-    {active === "users" && selected && <div style={css.modal} onMouseDown={(e) => e.target === e.currentTarget && setSelected(null)}><div style={css.panel}><header style={{ display: "flex", justifyContent: "space-between", gap: 15, alignItems: "start" }}><div><small style={{ color: "#59a9ff", fontWeight: 900, letterSpacing: ".14em" }}>FICHE UTILISATEUR</small><h2 style={{ margin: "6px 0" }}>{selected.full_name ?? selected.name ?? "Utilisateur"}</h2></div><button style={css.secondary} onClick={() => setSelected(null)}>Fermer</button></header><div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 10, marginTop: 18 }}>{userFields.map(([k,v]) => <div key={k} style={{ padding: 14, borderRadius: 12, background: "#071525", border: "1px solid rgba(148,163,184,.12)" }}><small style={{ color: "#7f96af" }}>{k}</small><div style={{ marginTop: 5, fontWeight: 700, wordBreak: "break-word" }}>{String(v ?? "—")}</div></div>)}</div><p style={{ color: "#8fa6bf", fontSize: 12, marginTop: 18 }}>Le statut KYC n'est pas affiché : SafePay fonctionne sans KYC dans cette version.</p></div></div>}
+    {active === "users" && selected && <div style={css.modal} onMouseDown={(e) => e.target === e.currentTarget && setSelected(null)}><div style={css.panel}><header style={{ display: "flex", justifyContent: "space-between", gap: 15, alignItems: "start" }}><div><small style={{ color: "#59a9ff", fontWeight: 900, letterSpacing: ".14em" }}>FICHE UTILISATEUR</small><h2 style={{ margin: "6px 0" }}>{selected.full_name ?? selected.name ?? "Utilisateur"}</h2></div><button style={css.secondary} onClick={() => setSelected(null)}>Fermer</button></header><div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 10, marginTop: 18 }}>{userFields.map(([k,v]) => <div key={k} style={{ padding: 14, borderRadius: 12, background: "#071525", border: "1px solid rgba(148,163,184,.12)" }}><small style={{ color: "#7f96af" }}>{k}</small><div style={{ marginTop: 5, fontWeight: 700, wordBreak: "break-word" }}>{String(v ?? "—")}</div></div>)}</div></div></div>}
 
-    {active === "disputes" && selected && <div style={css.modal} onMouseDown={(e) => e.target === e.currentTarget && setSelected(null)}><div style={css.panel}><header style={{ display: "flex", justifyContent: "space-between", gap: 15 }}><div><small style={{ color: "#59a9ff", fontWeight: 900, letterSpacing: ".14em" }}>CENTRE DE RÉSOLUTION</small><h2 style={{ margin: "6px 0" }}>Litige #{String(selected.id).slice(0,8)}</h2><div style={{ color: "#8fa6bf", fontSize: 13 }}>{selected.opened_by_name ?? "Client"} · {selected.opened_by_phone ?? "Téléphone indisponible"}</div></div><button style={css.secondary} onClick={() => setSelected(null)}>Fermer</button></header><div style={{ marginTop: 18, padding: 16, borderRadius: 14, background: "#071525" }}><b>Problème</b><p style={{ whiteSpace: "pre-wrap", color: "#c8d5e4" }}>{detail?.description ?? selected.description ?? "—"}</p><div style={{ color: "#8fa6bf", fontSize: 12 }}>Motif : {detail?.reason ?? selected.reason ?? "—"} · Statut : {detail?.status ?? selected.status ?? "—"}</div></div><h3 style={{ margin: "20px 0 10px" }}>Preuves / photos</h3>{evidence.length ? <div style={{ display: "grid", gap: 8 }}>{evidence.map((x) => <div key={x.id} style={{ padding: 12, border: "1px solid rgba(148,163,184,.12)", borderRadius: 11 }}><b>{x.media_type ?? "Fichier"}</b><div style={{ color: "#8fa6bf", fontSize: 12 }}>{x.caption ?? "Sans commentaire"} · {new Date(x.created_at).toLocaleString("fr-FR")}</div>{x.file_url && <a href={x.file_url} target="_blank" rel="noreferrer" style={{ color: "#65b5ff", fontSize: 12 }}>Ouvrir la preuve</a>}</div>)}</div> : <p style={{ color: "#8fa6bf" }}>Aucune preuve enregistrée.</p>}<h3 style={{ margin: "20px 0 10px" }}>Historique</h3>{events.length ? events.map((x) => <div key={x.id} style={{ padding: 10, borderBottom: "1px solid rgba(148,163,184,.1)", fontSize: 12 }}><b>{x.event_type}</b> · {new Date(x.created_at).toLocaleString("fr-FR")}<div style={{ color: "#8fa6bf" }}>{x.details ? JSON.stringify(x.details) : ""}</div></div>) : <p style={{ color: "#8fa6bf" }}>Aucun événement.</p>}<div style={{ marginTop: 22, borderTop: "1px solid rgba(148,163,184,.14)", paddingTop: 18 }}><h3>Décision administrative</h3><select value={resolution} onChange={(e) => setResolution(e.target.value)} style={css.input}><option value="refund_buyer">Rembourser l'acheteur</option><option value="release_seller">Libérer les fonds au vendeur</option><option value="partial_refund">Remboursement partiel</option><option value="no_action">Clôturer sans mouvement financier</option></select><textarea value={resolutionText} onChange={(e) => setResolutionText(e.target.value)} placeholder="Explication de la décision" style={{ ...css.input, minHeight: 90, marginTop: 10 }} /><button style={{ ...css.primary, marginTop: 10 }} disabled={busy} onClick={resolveDispute}>{busy ? "Traitement…" : "Enregistrer la décision"}</button>{message && <p style={{ color: message.includes("enregistrée") ? "#7fe0ac" : "#ff9c9c" }}>{message}</p>}</div></div></div>}
+    {active === "disputes" && selected && <div style={css.modal} onMouseDown={(e) => e.target === e.currentTarget && setSelected(null)}><div style={css.panel}><header style={{ display: "flex", justifyContent: "space-between", gap: 15 }}><div><small style={{ color: "#59a9ff", fontWeight: 900, letterSpacing: ".14em" }}>CENTRE DE RÉSOLUTION</small><h2 style={{ margin: "6px 0" }}>Litige #{String(selected.id).slice(0,8)}</h2><div style={{ color: "#8fa6bf", fontSize: 13 }}>{selected.opened_by_name ?? "Client"} · {selected.opened_by_phone ?? "Téléphone indisponible"}</div></div><button style={css.secondary} onClick={() => setSelected(null)}>Fermer</button></header><div style={{ marginTop: 18, padding: 16, borderRadius: 14, background: "#071525" }}><b>Problème</b><p style={{ whiteSpace: "pre-wrap", color: "#c8d5e4" }}>{detail?.description ?? selected.description ?? "—"}</p><div style={{ color: "#8fa6bf", fontSize: 12 }}>Motif : {detail?.reason ?? selected.reason ?? "—"} · Statut : {detail?.status ?? selected.status ?? "—"}</div></div><h3 style={{ margin: "20px 0 10px" }}>Preuves / photos</h3>{evidence.length ? <div style={{ display: "grid", gap: 8 }}>{evidence.map((x) => <div key={x.id} style={{ padding: 12, border: "1px solid rgba(148,163,184,.12)", borderRadius: 11 }}><b>{x.media_type ?? "Fichier"}</b><div style={{ color: "#8fa6bf", fontSize: 12 }}>{x.caption ?? "Sans commentaire"} · {new Date(x.created_at).toLocaleString("fr-FR")}</div>{x.file_url && <a href={x.file_url} target="_blank" rel="noreferrer" style={{ color: "#65b5ff", fontSize: 12 }}>Ouvrir la preuve</a>}</div>)}</div> : <p style={{ color: "#8fa6bf" }}>Aucune preuve enregistrée.</p>}<h3 style={{ margin: "20px 0 10px" }}>Historique</h3>{events.length ? events.map((x) => <div key={x.id} style={{ padding: 10, borderBottom: "1px solid rgba(148,163,184,.1)", fontSize: 12 }}><b>{x.event_type}</b> · {new Date(x.created_at).toLocaleString("fr-FR")}<div style={{ color: "#8fa6bf" }}>{x.details ? JSON.stringify(x.details) : ""}</div></div>) : <p style={{ color: "#8fa6bf" }}>Aucun événement.</p>}<div style={{ marginTop: 22, borderTop: "1px solid rgba(148,163,184,.14)", paddingTop: 18 }}><h3>Décision administrative</h3><select value={resolution} onChange={(e) => setResolution(e.target.value)} style={css.input}><option value="refund_buyer">Rembourser l'acheteur</option><option value="release_seller">Libérer les fonds au vendeur</option></select><textarea value={resolutionText} onChange={(e) => setResolutionText(e.target.value)} placeholder="Explication de la décision" style={{ ...css.input, minHeight: 90, marginTop: 10 }} /><button style={{ ...css.primary, marginTop: 10 }} disabled={busy} onClick={resolveDispute}>{busy ? "Traitement…" : "Enregistrer la décision"}</button>{notice && <p style={{ color: notice.includes("traité") ? "#7fe0ac" : "#ff9c9c" }}>{notice}</p>}</div></div></div>}
 
-    {active === "support" && selected && <div style={css.modal} onMouseDown={(e) => e.target === e.currentTarget && setSelected(null)}><div style={css.panel}><header style={{ display: "flex", justifyContent: "space-between" }}><div><small style={{ color: "#59a9ff", fontWeight: 900 }}>SUPPORT CLIENT</small><h2 style={{ margin: "6px 0" }}>{selected.name ?? "Client"} · {selected.phone ?? "—"}</h2></div><button style={css.secondary} onClick={() => setSelected(null)}>Fermer</button></header><div style={{ marginTop: 18, padding: 16, background: "#071525", borderRadius: 14, whiteSpace: "pre-wrap" }}>{selected.message ?? "—"}</div><div style={{ marginTop: 18 }}><textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Répondre au client…" style={{ ...css.input, minHeight: 120 }} /><button style={{ ...css.primary, marginTop: 10 }} disabled={busy || !message.trim()} onClick={sendSupport}>{busy ? "Envoi…" : "Envoyer la réponse"}</button>{message === "" && <p style={{ color: "#8fa6bf", fontSize: 12 }}>Les échanges sont enregistrés dans l'historique du ticket.</p>}{message && <p style={{ color: "#8fa6bf", fontSize: 12 }}>{message}</p>}</div></div></div>}
+    {active === "support" && selected && <div style={css.modal} onMouseDown={(e) => e.target === e.currentTarget && setSelected(null)}><div style={css.panel}><header style={{ display: "flex", justifyContent: "space-between" }}><div><small style={{ color: "#59a9ff", fontWeight: 900 }}>SUPPORT CLIENT</small><h2 style={{ margin: "6px 0" }}>{selected.name ?? "Client"} · {selected.phone ?? "—"}</h2></div><button style={css.secondary} onClick={() => setSelected(null)}>Fermer</button></header><div style={{ marginTop: 18, padding: 16, background: "#071525", borderRadius: 14, whiteSpace: "pre-wrap" }}><b>Message initial</b><p style={{ marginBottom: 0 }}>{selected.message ?? "—"}</p></div><h3 style={{ margin: "20px 0 10px" }}>Historique des échanges</h3><div style={{ maxHeight: 260, overflow: "auto", padding: "4px 2px" }}>{supportMessages.length ? supportMessages.map((m) => <div key={m.id} style={{ padding: "10px 0", borderBottom: "1px solid rgba(148,163,184,.1)" }}><b>{m.sender_type === "admin" ? "Administrateur" : "Client"}</b><span style={{ float: "right", color: "#8fa6bf", fontSize: 12 }}>{m.created_at ? new Date(m.created_at).toLocaleString("fr-FR") : "—"}</span><p style={{ whiteSpace: "pre-wrap", color: "#c6d4e3", margin: "6px 0 0" }}>{m.message}</p></div>) : <p style={{ color: "#8fa6bf" }}>Aucun échange supplémentaire.</p>}</div><div style={{ marginTop: 18 }}><textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Répondre au client…" style={{ ...css.input, minHeight: 120 }} /><button style={{ ...css.primary, marginTop: 10 }} disabled={busy || !draft.trim()} onClick={sendSupport}>{busy ? "Envoi…" : "Envoyer la réponse"}</button>{notice && <p style={{ color: notice.includes("envoyée") ? "#7fe0ac" : "#ff9c9c" }}>{notice}</p>}</div></div></div>}
   </>;
 }
