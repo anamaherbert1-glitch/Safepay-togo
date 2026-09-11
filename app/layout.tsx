@@ -7,8 +7,8 @@ import "./safepay-responsive.css";
 import "./safepay-theme.css";
 
 export const metadata: Metadata = {
-  title: "SafePay",
-  description: "SafePay — secure payments",
+  title: "Cyenoo",
+  description: "Cyenoo — secure payments",
 };
 
 const themeBootstrap = `(() => { try { const t = localStorage.getItem('safepay-theme'); if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; const l = localStorage.getItem('safepay-language'); if (l === 'en' || l === 'fr') document.documentElement.lang = l; } catch (_) {} })()`;
