@@ -5,6 +5,7 @@ import "./safepay-settings.css";
 import "./safepay-polish.css";
 import "./safepay-responsive.css";
 import "./safepay-theme.css";
+import "./cyenoo-contrast.css";
 
 export const metadata: Metadata = {
   title: "Cyenoo",
