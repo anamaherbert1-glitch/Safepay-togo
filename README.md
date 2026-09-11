@@ -1,6 +1,6 @@
-# SafePay Togo — V5 Migration
+# Cyenoo Togo — V5 Migration
 
-SafePay V5 is the master product version. This repository is the migration target for the existing V5 frontend and existing Supabase backend.
+Cyenoo V5 is the master product version. This repository is the migration target for the existing V5 frontend and existing Supabase backend.
 
 ## Rules
 - Preserve V5 UI/UX and business logic.
@@ -9,11 +9,14 @@ SafePay V5 is the master product version. This repository is the migration targe
 - Supabase remains the source of truth.
 - Remove financial/localStorage state progressively.
 - Reuse existing tables, RPCs and Edge Functions.
-- Registration: email/Google → password → phone → country/format validation → uniqueness → OTP → verified phone → profile.
+- Registration: phone → country/format validation → uniqueness → OTP → verified phone → profile.
 - Phone format validation is not ownership verification; OTP must succeed before the phone is considered verified.
 - Modals/bottom sheets have their own visible back button.
 - Back navigation follows history and does not blindly return Home.
-- Profile uses a person/head icon inside a circle, with the same color, size and alignment system as other SafePay icons; no special blue/purple background.
+- Profile uses a person/head icon inside a circle, with the same color, size and alignment system as other Cyenoo icons; no special blue/purple background.
 
 ## Current phase
-Initial Next.js/TypeScript migration scaffold. The existing V5 HTML remains the UI reference while real Supabase integration replaces local state progressively.
+Next.js/TypeScript migration with the existing V5 interface as the UI reference and the existing Supabase backend as the source of truth.
+
+## Branding
+The public product name is **Cyenoo**. Internal database identifiers and compatibility keys are intentionally preserved where changing them would break the existing backend architecture.
