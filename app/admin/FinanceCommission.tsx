@@ -111,7 +111,7 @@ export default function FinanceCommission() {
       <div className="adm-section-intro">
         <div>
           <span>FINANCE</span>
-          <h2>Commissions SafePay</h2>
+          <h2>Commissions Cyenoo</h2>
           <p>
             Source unique : <b>safepay_fee_settings</b>. Les transactions utilisent le moteur backend et un snapshot financier immuable.
           </p>
