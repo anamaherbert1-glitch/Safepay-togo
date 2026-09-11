@@ -39,7 +39,7 @@ export default function AdminSecurityPage() {
           <div>
             <div style={{ color: "#59a9ff", fontSize: 10, fontWeight: 900, letterSpacing: ".18em" }}>CONFIGURATION • SÉCURITÉ</div>
             <h1 style={{ margin: "7px 0", fontSize: 36, letterSpacing: "-.035em" }}>Sécurité du Dashboard</h1>
-            <p style={{ margin: 0, color: "#8ca2bb", maxWidth: 720 }}>Contrôles vérifiés depuis SafePay. Les résultats proviennent du backend, pas de simples indicateurs visuels.</p>
+            <p style={{ margin: 0, color: "#8ca2bb", maxWidth: 720 }}>Contrôles vérifiés depuis Cyenoo. Les résultats proviennent du backend, pas de simples indicateurs visuels.</p>
           </div>
           <button onClick={load} disabled={loading} style={{ border: "1px solid rgba(102,180,255,.2)", borderRadius: 11, padding: "11px 15px", background: "linear-gradient(135deg,#2d99ff,#075ed8)", color: "#fff", fontWeight: 800, cursor: loading ? "wait" : "pointer", opacity: loading ? .65 : 1 }}>{loading ? "Vérification…" : "Actualiser"}</button>
         </header>
