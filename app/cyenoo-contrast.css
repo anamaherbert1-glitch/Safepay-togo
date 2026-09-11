@@ -1,0 +1,63 @@
+/* Cyenoo contrast fixes — texts must stay readable on light backgrounds */
+
+.auth-screen,
+.onboarding-screen {
+  color: #101828;
+}
+
+.auth-header strong {
+  color: #0f294d !important;
+  opacity: 1 !important;
+  font-weight: 800 !important;
+}
+
+.auth-kicker {
+  color: #155eef !important;
+  opacity: 1 !important;
+  font-weight: 800 !important;
+}
+
+.auth-card h1,
+.onboarding-copy h1,
+.cy-entry-copy h1 {
+  color: #101828 !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #101828 !important;
+  background: none !important;
+  background-clip: unset !important;
+  -webkit-background-clip: unset !important;
+}
+
+.auth-card .sp-muted,
+.onboarding-copy p,
+.cy-entry-copy p,
+.phone-country-meta,
+.auth-footer {
+  color: #344054 !important;
+  opacity: 1 !important;
+}
+
+.sp-form label {
+  color: #1d2939 !important;
+  opacity: 1 !important;
+}
+
+.auth-footer button,
+.onboarding-secondary {
+  color: #155eef !important;
+  opacity: 1 !important;
+  font-weight: 800 !important;
+}
+
+.onboarding-logo,
+.onboarding-logo strong {
+  color: #0f294d !important;
+  opacity: 1 !important;
+}
+
+/* Ensure animated copy ends fully visible */
+.onboarding-copy {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
