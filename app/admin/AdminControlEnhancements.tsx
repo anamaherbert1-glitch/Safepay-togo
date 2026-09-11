@@ -102,9 +102,9 @@ export default function AdminControlEnhancements() {
   async function resolveDispute() {
     if (!selected?.id) return;
     setBusy(true); setNotice("");
-    const r = await createClient().rpc("admin_resolve_dispute", { p_dispute_id: selected.id, p_resolution: resolutionText.trim() || "Décision administrative SafePay", p_resolution_action: resolution });
+    const r = await createClient().rpc("admin_resolve_dispute", { p_dispute_id: selected.id, p_resolution: resolutionText.trim() || "Décision administrative Cyenoo", p_resolution_action: resolution });
     setBusy(false);
-    if (r.error) setNotice(r.error.message); else setNotice("Litige traité et décision enregistrée dans SafePay.");
+    if (r.error) setNotice(r.error.message); else setNotice("Litige traité et décision enregistrée dans Cyenoo.");
   }
 
   async function sendSupport() {
