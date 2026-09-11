@@ -18,6 +18,7 @@ type Dialog =
   | { kind: "withdrawal"; row: Row }
   | { kind: "notify"; row: Row }
   | { kind: "user-status"; row: Row }
+  | { kind: "dispute"; row: Row }
   | null;
 
 const modules: [Module, string, string][] = [
@@ -40,10 +41,32 @@ const modules: [Module, string, string][] = [
   ["audit", "Audit logs", "Traçabilité"],
 ];
 
+const DEFAULT_FLAGS: { key: string; label: string; description: string }[] = [
+  { key: "deposits_enabled", label: "Dépôts", description: "Autoriser les recharges wallet" },
+  { key: "withdrawals_enabled", label: "Retraits", description: "Autoriser les payouts" },
+  { key: "transfers_enabled", label: "Transferts", description: "Paiements P2P / escrow" },
+  { key: "disputes_enabled", label: "Litiges", description: "Ouverture de litiges clients" },
+  { key: "notifications_enabled", label: "Notifications", description: "Push & in-app" },
+  { key: "maintenance_mode", label: "Mode maintenance", description: "Suspendre les opérations" },
+];
+
 const money = (v: any) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "XOF", maximumFractionDigits: 0 }).format(Number(v ?? 0));
 const date = (v: any) =>
   v ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(v)) : "—";
+
+function CyenooMark({ size = 28 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 120 120" width={size} height={size} aria-hidden="true">
+      <ellipse cx="60" cy="68" rx="46" ry="16" fill="none" stroke="rgba(255,255,255,.35)" strokeWidth="3.5" transform="rotate(-26 60 68)" />
+      <path d="M82 26c-20-12-48-8-60 12-13 20-9 46 12 58 18 11 42 9 56-4" fill="none" stroke="#fff" strokeWidth="15" strokeLinecap="round" />
+      <rect x="46" y="58" width="10" height="20" rx="2.5" fill="#fff" />
+      <rect x="59" y="48" width="10" height="30" rx="2.5" fill="#fff" />
+      <rect x="72" y="38" width="10" height="40" rx="2.5" fill="#fff" />
+      <rect x="85" y="28" width="10" height="50" rx="2.5" fill="#fff" />
+    </svg>
+  );
+}
 
 function Icon({ name }: { name: string }) {
   const map: Record<string, string> = {
@@ -59,6 +82,7 @@ export default function AdminDashboardLegacy() {
   const [module, setModule] = useState<Module>("overview");
   const [stats, setStats] = useState<Row>({});
   const [rows, setRows] = useState<Row[]>([]);
+  const [flags, setFlags] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
   const [toast, setToast] = useState("");
@@ -92,6 +116,19 @@ export default function AdminDashboardLegacy() {
       }
     })();
   }, [rpc]);
+
+  const loadFlags = useCallback(async () => {
+    const { data, error: qErr } = await supabase.from("feature_flags").select("key,enabled");
+    if (qErr) throw new Error(qErr.message);
+    const map: Record<string, boolean> = {};
+    DEFAULT_FLAGS.forEach((f) => {
+      map[f.key] = false;
+    });
+    (data || []).forEach((row: any) => {
+      map[row.key] = !!row.enabled;
+    });
+    setFlags(map);
+  }, [supabase]);
 
   const load = useCallback(async () => {
     if (!allowed) return;
@@ -136,6 +173,9 @@ export default function AdminDashboardLegacy() {
         const s = await rpc("admin_dashboard_stats");
         setStats(s || {});
         setRows([]);
+      } else if (module === "features") {
+        await loadFlags();
+        setRows([]);
       } else {
         setRows([]);
       }
@@ -145,7 +185,7 @@ export default function AdminDashboardLegacy() {
     } finally {
       setBusy(false);
     }
-  }, [allowed, module, rpc, search]);
+  }, [allowed, module, rpc, search, loadFlags]);
 
   useEffect(() => {
     void load();
@@ -156,6 +196,24 @@ export default function AdminDashboardLegacy() {
     const t = window.setTimeout(() => setToast(""), 3000);
     return () => window.clearTimeout(t);
   }, [toast]);
+
+  async function toggleFlag(key: string, enabled: boolean) {
+    setActionBusy(true);
+    setError("");
+    try {
+      await rpc("admin_set_feature_flag", {
+        p_key: key,
+        p_enabled: enabled,
+        p_reason: "Modification depuis le Dashboard Admin Cyenoo",
+      });
+      setFlags((prev) => ({ ...prev, [key]: enabled }));
+      setToast(`Flag « ${key} » ${enabled ? "activé" : "désactivé"}.`);
+    } catch (e: any) {
+      setError(e.message || "Impossible de modifier le flag");
+    } finally {
+      setActionBusy(false);
+    }
+  }
 
   async function runDialogAction() {
     if (!dialog) return;
@@ -185,6 +243,14 @@ export default function AdminDashboardLegacy() {
           p_reason: text || (nextActive ? "Réactivation compte" : "Suspension compte"),
         });
         setToast(nextActive ? "Compte réactivé." : "Compte suspendu.");
+      } else if (dialog.kind === "dispute") {
+        if (!text.trim()) throw new Error("Justification requise");
+        await rpc("admin_resolve_dispute", {
+          p_dispute_id: dialog.row.id,
+          p_resolution: text.trim(),
+          p_resolution_action: choice,
+        });
+        setToast("Litige résolu dans Cyenoo.");
       }
       setDialog(null);
       setText("");
@@ -210,7 +276,9 @@ export default function AdminDashboardLegacy() {
       <main className="adm-app">
         <AdminStyles />
         <div className="adm-loading" style={{ flexDirection: "column", gap: 12 }}>
-          <div className="adm-logo">C</div>
+          <div className="adm-logo" style={{ display: "grid", placeItems: "center" }}>
+            <CyenooMark size={28} />
+          </div>
           <h2 style={{ margin: 0 }}>Cyenoo Admin</h2>
           <p style={{ color: "#8398ad" }}>Connexion sécurisée au centre de pilotage.</p>
           <p className="adm-error">{error || "Accès administrateur requis."}</p>
@@ -235,12 +303,16 @@ export default function AdminDashboardLegacy() {
     module !== "features" &&
     module !== "security";
 
+  const actionModules = module === "withdrawals" || module === "users" || module === "disputes";
+
   return (
     <main className="adm-app">
       <AdminStyles />
       <aside className="adm-sidebar">
         <div className="adm-brand">
-          <div className="adm-brand-mark">C</div>
+          <div className="adm-brand-mark" style={{ padding: 6 }}>
+            <CyenooMark size={30} />
+          </div>
           <div>
             <strong>Cyenoo</strong>
             <span>ADMIN CONSOLE</span>
@@ -306,7 +378,7 @@ export default function AdminDashboardLegacy() {
               <button className="adm-primary" onClick={() => setModule("withdrawals")}>Traiter les retraits</button>
               <button className="adm-secondary" onClick={() => setModule("disputes")}>Voir les litiges</button>
               <button className="adm-secondary" onClick={() => setModule("users")}>Utilisateurs</button>
-              <button className="adm-secondary" onClick={() => setModule("finance")}>Commissions</button>
+              <button className="adm-secondary" onClick={() => setModule("features")}>Feature flags</button>
             </div>
           </div>
         )}
@@ -346,14 +418,62 @@ export default function AdminDashboardLegacy() {
           </div>
         )}
 
-        {(module === "features" || module === "security") && (
+        {module === "features" && (
           <div className="adm-hero">
             <div className="adm-heading">
-              <h2>{active[1]}</h2>
+              <span className="adm-eyebrow">FEATURE FLAGS</span>
+              <h2>Contrôle des fonctionnalités</h2>
               <p>
-                Module connecté au backend Cyenoo. Les opérations financières restent contrôlées par les RPC
-                administratives.
+                Les interrupteurs écrivent dans <b>feature_flags</b> via <b>admin_set_feature_flag</b>.
               </p>
+            </div>
+            {busy ? (
+              <div className="adm-loading">Chargement des flags…</div>
+            ) : (
+              <div className="adm-feature-grid" style={{ display: "grid", gap: 12, marginTop: 16 }}>
+                {DEFAULT_FLAGS.map((f) => {
+                  const on = !!flags[f.key];
+                  return (
+                    <div
+                      key={f.key}
+                      className="adm-feature-card"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 16,
+                        padding: "14px 16px",
+                        borderRadius: 14,
+                        border: "1px solid rgba(135,185,235,.15)",
+                        background: "rgba(13,29,48,.8)",
+                      }}
+                    >
+                      <div>
+                        <strong style={{ display: "block" }}>{f.label}</strong>
+                        <small style={{ color: "#8398ad" }}>{f.description}</small>
+                        <div style={{ marginTop: 4, fontSize: 11, color: "#6e8ba7" }}>{f.key}</div>
+                      </div>
+                      <button
+                        className={on ? "adm-primary" : "adm-secondary"}
+                        disabled={actionBusy}
+                        onClick={() => void toggleFlag(f.key, !on)}
+                        style={{ minWidth: 88 }}
+                      >
+                        {on ? "ON" : "OFF"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {module === "security" && (
+          <div className="adm-hero">
+            <div className="adm-heading">
+              <h2>Sécurité</h2>
+              <p>Garde-fous Cyenoo. Les opérations sensibles passent par les RPC admin.</p>
             </div>
           </div>
         )}
@@ -385,7 +505,7 @@ export default function AdminDashboardLegacy() {
                     {columns.map((c) => (
                       <th key={c}>{c.replace(/_/g, " ")}</th>
                     ))}
-                    {(module === "withdrawals" || module === "users") && <th>Actions</th>}
+                    {actionModules && <th>Actions</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -415,6 +535,20 @@ export default function AdminDashboardLegacy() {
                             }}
                           >
                             Traiter
+                          </button>
+                        </td>
+                      )}
+                      {module === "disputes" && (
+                        <td>
+                          <button
+                            className="adm-secondary"
+                            onClick={() => {
+                              setChoice("refund_buyer");
+                              setText("");
+                              setDialog({ kind: "dispute", row: r });
+                            }}
+                          >
+                            Résoudre
                           </button>
                         </td>
                       )}
@@ -460,9 +594,11 @@ export default function AdminDashboardLegacy() {
                     ? "Traitement du retrait"
                     : dialog.kind === "notify"
                       ? "Notifier l'utilisateur"
-                      : (dialog.row.is_active ?? true)
-                        ? "Suspendre le compte"
-                        : "Réactiver le compte"}
+                      : dialog.kind === "dispute"
+                        ? "Résolution du litige"
+                        : (dialog.row.is_active ?? true)
+                          ? "Suspendre le compte"
+                          : "Réactiver le compte"}
                 </h3>
               </div>
               <button onClick={() => setDialog(null)}><Icon name="close" /></button>
@@ -483,12 +619,27 @@ export default function AdminDashboardLegacy() {
                   </select>
                 </label>
               )}
+              {dialog.kind === "dispute" && (
+                <label className="adm-modal-label">
+                  Décision
+                  <select value={choice} onChange={(e) => setChoice(e.target.value)}>
+                    <option value="refund_buyer">Rembourser l'acheteur</option>
+                    <option value="release_seller">Libérer au vendeur</option>
+                  </select>
+                </label>
+              )}
               <label className="adm-modal-label">
                 {dialog.kind === "notify" ? "Message" : "Motif / justification"}
                 <textarea
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  placeholder={dialog.kind === "notify" ? "Message à envoyer…" : "Justification…"}
+                  placeholder={
+                    dialog.kind === "notify"
+                      ? "Message à envoyer…"
+                      : dialog.kind === "dispute"
+                        ? "Explication de la décision…"
+                        : "Justification…"
+                  }
                 />
               </label>
             </div>
@@ -496,7 +647,11 @@ export default function AdminDashboardLegacy() {
               <button className="ghost" onClick={() => setDialog(null)}>Annuler</button>
               <button
                 className="adm-primary"
-                disabled={actionBusy || (dialog.kind === "notify" && !text.trim())}
+                disabled={
+                  actionBusy ||
+                  (dialog.kind === "notify" && !text.trim()) ||
+                  (dialog.kind === "dispute" && !text.trim())
+                }
                 onClick={() => void runDialogAction()}
               >
                 {actionBusy ? "Traitement…" : "Confirmer"}
