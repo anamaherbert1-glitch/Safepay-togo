@@ -5,6 +5,29 @@ import { useEffect, useState } from "react";
 
 type Phase = "intro" | "ready";
 
+/** Cyenoo mark: C + growth bars (matches brand logo) */
+function CyenooMark({ size = 72, variant = "blue" }: { size?: number; variant?: "blue" | "white" }) {
+  const stroke = variant === "white" ? "#ffffff" : "#155eef";
+  const bar = variant === "white" ? "#ffffff" : "#155eef";
+  const orbit = variant === "white" ? "rgba(255,255,255,.4)" : "rgba(21,94,239,.28)";
+  return (
+    <svg viewBox="0 0 120 120" width={size} height={size} aria-hidden="true">
+      <ellipse cx="60" cy="68" rx="46" ry="16" fill="none" stroke={orbit} strokeWidth="3.5" transform="rotate(-26 60 68)" />
+      <path
+        d="M82 26c-20-12-48-8-60 12-13 20-9 46 12 58 18 11 42 9 56-4"
+        fill="none"
+        stroke={stroke}
+        strokeWidth="15"
+        strokeLinecap="round"
+      />
+      <rect x="46" y="58" width="10" height="20" rx="2.5" fill={bar} />
+      <rect x="59" y="48" width="10" height="30" rx="2.5" fill={bar} />
+      <rect x="72" y="38" width="10" height="40" rx="2.5" fill={bar} />
+      <rect x="85" y="28" width="10" height="50" rx="2.5" fill={bar} />
+    </svg>
+  );
+}
+
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("intro");
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -12,22 +35,17 @@ export default function Home() {
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReduceMotion(media.matches);
-    const seen = window.localStorage.getItem("cyenoo-splash-seen") === "1";
-    if (seen || media.matches) {
+    // Always show splash on every app open (except reduced-motion)
+    if (media.matches) {
       setPhase("ready");
       return;
     }
-    // ~4.5s: slower entrance so the logo is readable
-    const t = window.setTimeout(() => {
-      setPhase("ready");
-      window.localStorage.setItem("cyenoo-splash-seen", "1");
-    }, 4500);
+    const t = window.setTimeout(() => setPhase("ready"), 5000);
     return () => window.clearTimeout(t);
   }, []);
 
   function skip() {
     setPhase("ready");
-    window.localStorage.setItem("cyenoo-splash-seen", "1");
   }
 
   if (phase === "intro") {
@@ -35,34 +53,9 @@ export default function Home() {
       <main className="cy-splash" onClick={skip} role="presentation">
         <div className={`cy-splash-stage ${reduceMotion ? "static" : ""}`}>
           <div className="cy-logo-3d" aria-hidden="true">
-            <svg className="cy-logo-svg" viewBox="0 0 120 120" width="132" height="132">
-              <defs>
-                <linearGradient id="cyFace" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ffffff" />
-                  <stop offset="100%" stopColor="#e8f1ff" />
-                </linearGradient>
-              </defs>
-              <ellipse cx="60" cy="62" rx="48" ry="18" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth="4" transform="rotate(-28 60 62)" />
-              <path
-                d="M78 28c-18-10-42-6-54 12-12 18-8 42 10 54 16 11 38 10 52-2"
-                fill="none"
-                stroke="url(#cyFace)"
-                strokeWidth="16"
-                strokeLinecap="round"
-              />
-              <path
-                d="M78 28c-18-10-42-6-54 12-12 18-8 42 10 54 16 11 38 10 52-2"
-                fill="none"
-                stroke="#d6e6ff"
-                strokeWidth="10"
-                strokeLinecap="round"
-                opacity=".9"
-              />
-              <rect x="48" y="58" width="9" height="18" rx="2" fill="#ffffff" />
-              <rect x="60" y="48" width="9" height="28" rx="2" fill="#ffffff" />
-              <rect x="72" y="38" width="9" height="38" rx="2" fill="#ffffff" />
-              <rect x="84" y="30" width="9" height="46" rx="2" fill="#ffffff" />
-            </svg>
+            <div className="cy-logo-plate">
+              <CyenooMark size={110} variant="white" />
+            </div>
           </div>
           <strong className="cy-splash-wordmark">Cyenoo</strong>
           <p className="cy-splash-hint">Touchez pour continuer</p>
@@ -84,49 +77,58 @@ export default function Home() {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
-            animation: cy-enter 4.4s cubic-bezier(.22,1,.36,1) forwards;
+            gap: 22px;
+            animation: cy-enter 5s cubic-bezier(.22,1,.36,1) forwards;
           }
           .cy-splash-stage.static { animation: none; opacity: 1; transform: none; }
           .cy-logo-3d {
-            width: 140px;
-            height: 140px;
+            width: 160px;
+            height: 160px;
             display: grid;
             place-items: center;
-            animation: cy-spin-zoom 3.6s cubic-bezier(.22,1,.36,1) forwards;
-            filter: drop-shadow(0 20px 42px rgba(0,0,0,.32));
+            animation: cy-spin-zoom 4.6s cubic-bezier(.22,1,.36,1) forwards;
+            filter: drop-shadow(0 22px 48px rgba(0,0,0,.35));
           }
-          .cy-logo-svg { display: block; }
+          .cy-logo-plate {
+            width: 140px;
+            height: 140px;
+            border-radius: 36px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(145deg, rgba(255,255,255,.18), rgba(255,255,255,.06));
+            border: 1px solid rgba(255,255,255,.22);
+            backdrop-filter: blur(6px);
+          }
           .cy-splash-wordmark {
-            font-size: 36px;
+            font-size: 38px;
             font-weight: 800;
             letter-spacing: -0.6px;
             color: #ffffff;
-            text-shadow: 0 2px 0 rgba(0,0,0,.12), 0 10px 28px rgba(0,0,0,.28);
-            animation: cy-fade-up 1.4s ease 0.55s both;
+            text-shadow: 0 2px 0 rgba(0,0,0,.12), 0 12px 30px rgba(0,0,0,.3);
+            animation: cy-fade-up 1.6s ease 0.7s both;
           }
           .cy-splash-hint {
             margin: 0;
             font-size: 13px;
             font-weight: 600;
             color: rgba(255,255,255,.92);
-            animation: cy-fade-up 1.1s ease 1.5s both;
+            animation: cy-fade-up 1.2s ease 1.8s both;
           }
           @keyframes cy-spin-zoom {
-            0% { opacity: 0; transform: scale(0.28) rotate(-200deg); }
-            35% { opacity: 1; transform: scale(1.12) rotate(18deg); }
-            55% { transform: scale(0.94) rotate(-6deg); }
-            75% { transform: scale(1.04) rotate(3deg); }
+            0% { opacity: 0; transform: scale(0.22) rotate(-220deg); }
+            30% { opacity: 1; transform: scale(1.1) rotate(14deg); }
+            50% { transform: scale(0.95) rotate(-5deg); }
+            70% { transform: scale(1.03) rotate(2deg); }
             100% { opacity: 1; transform: scale(1) rotate(0deg); }
           }
           @keyframes cy-enter {
             0% { opacity: 0; }
-            12% { opacity: 1; }
-            78% { opacity: 1; transform: scale(1); }
-            100% { opacity: 0; transform: scale(1.28); }
+            10% { opacity: 1; }
+            82% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.22); }
           }
           @keyframes cy-fade-up {
-            from { opacity: 0; transform: translateY(14px); }
+            from { opacity: 0; transform: translateY(16px); }
             to { opacity: 1; transform: translateY(0); }
           }
           @media (prefers-reduced-motion: reduce) {
@@ -143,20 +145,16 @@ export default function Home() {
     <main className="safepay-shell onboarding-screen cy-entry">
       <header className="onboarding-header">
         <div className="onboarding-logo">
-          <span className="cy-brand-badge">CY</span>
+          <span className="cy-brand-badge" aria-hidden="true">
+            <CyenooMark size={28} variant="white" />
+          </span>
           <strong>Cyenoo</strong>
         </div>
       </header>
       <section className="onboarding-content" style={{ justifyContent: "center", gap: 24 }}>
         <div className="cy-entry-hero" aria-hidden="true">
           <div className="cy-entry-mark">
-            <svg viewBox="0 0 120 120" width="72" height="72">
-              <path d="M78 28c-18-10-42-6-54 12-12 18-8 42 10 54 16 11 38 10 52-2" fill="none" stroke="#155eef" strokeWidth="14" strokeLinecap="round" />
-              <rect x="48" y="58" width="9" height="18" rx="2" fill="#155eef" />
-              <rect x="60" y="48" width="9" height="28" rx="2" fill="#155eef" />
-              <rect x="72" y="38" width="9" height="38" rx="2" fill="#155eef" />
-              <rect x="84" y="30" width="9" height="46" rx="2" fill="#155eef" />
-            </svg>
+            <CyenooMark size={78} variant="blue" />
           </div>
         </div>
         <div className="onboarding-copy cy-entry-copy">
@@ -170,7 +168,6 @@ export default function Home() {
         </div>
       </section>
       <style>{`
-        /* High-contrast entry UI */
         .cy-entry .onboarding-logo strong {
           color: #0f294d !important;
           opacity: 1 !important;
@@ -179,20 +176,18 @@ export default function Home() {
         .cy-brand-badge {
           display: grid !important;
           place-items: center;
-          width: 36px;
-          height: 36px;
-          border-radius: 12px;
+          width: 42px;
+          height: 42px;
+          border-radius: 14px;
           background: linear-gradient(135deg, #2f7cff, #155eef);
-          color: #fff !important;
-          font-size: 12px;
-          font-weight: 900;
-          letter-spacing: -0.3px;
+          box-shadow: 0 8px 20px rgba(21,94,239,.28);
+          overflow: hidden;
         }
         .cy-entry-hero { display: grid; place-items: center; margin-top: 8px; }
         .cy-entry-mark {
-          width: 96px;
-          height: 96px;
-          border-radius: 28px;
+          width: 104px;
+          height: 104px;
+          border-radius: 30px;
           background: #ffffff;
           display: grid;
           place-items: center;
