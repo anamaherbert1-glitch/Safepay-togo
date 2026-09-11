@@ -65,7 +65,7 @@ export default function AdminSettings() {
       <header>
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Configuration</p>
         <h2 className="mt-1 text-2xl font-semibold text-slate-950 dark:text-white">Paramètres</h2>
-        <p className="mt-1 text-sm text-slate-500">Centre de configuration réservé à l'administration SafePay.</p>
+        <p className="mt-1 text-sm text-slate-500">Centre de configuration réservé à l'administration Cyenoo.</p>
       </header>
 
       <div className="grid gap-5 lg:grid-cols-[250px_1fr]">
