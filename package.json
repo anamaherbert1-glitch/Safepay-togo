@@ -1,6 +1,6 @@
 {
   "name": "safepay-togo",
-  "version": "5.0.0-migration",
+  "version": "5.0.1-pwa",
   "private": true,
   "scripts": {
     "dev": "next dev",

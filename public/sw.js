@@ -1,9 +1,9 @@
-/* Cyenoo service worker — required for installable PWA */
-const CACHE = "cyenoo-v1";
+/* Cyenoo PWA service worker */
+const CACHE = "cyenoo-pwa-v2";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(["/"])));
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(["/", "/manifest.webmanifest"])));
 });
 
 self.addEventListener("activate", (event) => {
@@ -15,17 +15,16 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  const req = event.request;
-  if (req.method !== "GET") return;
+  if (event.request.method !== "GET") return;
   event.respondWith(
-    fetch(req)
-      .then((res) => {
-        const copy = res.clone();
-        if (res.ok && req.url.startsWith(self.location.origin)) {
-          caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+    fetch(event.request)
+      .then((response) => {
+        const clone = response.clone();
+        if (response.ok && event.request.url.startsWith(self.location.origin)) {
+          caches.open(CACHE).then((c) => c.put(event.request, clone)).catch(() => {});
         }
-        return res;
+        return response;
       })
-      .catch(() => caches.match(req).then((r) => r || caches.match("/")))
+      .catch(() => caches.match(event.request).then((r) => r || caches.match("/")))
   );
 });
