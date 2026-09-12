@@ -1,21 +1,46 @@
 import type { MetadataRoute } from "next";
-import { ICON_VERSION } from "@/lib/cyenoo-icon-data";
 
 export default function manifest(): MetadataRoute.Manifest {
-  const v = ICON_VERSION;
   return {
+    id: "/",
     name: "Cyenoo",
     short_name: "Cyenoo",
     description: "Paiements sécurisés au Togo",
-    start_url: "/",
+    start_url: "/?source=pwa",
+    scope: "/",
     display: "standalone",
+    display_override: ["standalone", "minimal-ui"],
     background_color: "#0032C7",
     theme_color: "#0032C7",
-    orientation: "portrait",
+    orientation: "portrait-primary",
+    lang: "fr",
+    dir: "ltr",
+    categories: ["finance", "business"],
     icons: [
-      { src: `/icon?v=${v}`, sizes: "180x180", type: "image/png", purpose: "any" },
-      { src: `/icon?v=${v}`, sizes: "180x180", type: "image/png", purpose: "maskable" },
-      { src: `/apple-icon?v=${v}`, sizes: "180x180", type: "image/png", purpose: "any" },
+      {
+        src: "/icon-192",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-192",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "maskable",
+      },
+      {
+        src: "/icon",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
     ],
   };
 }

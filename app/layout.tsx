@@ -6,11 +6,13 @@ import "./safepay-polish.css";
 import "./safepay-responsive.css";
 import "./safepay-theme.css";
 import "./cyenoo-contrast.css";
+import PwaRegister from "@/components/PwaRegister";
 
 export const metadata: Metadata = {
   title: "Cyenoo",
   description: "Cyenoo — paiements sécurisés au Togo",
   applicationName: "Cyenoo",
+  manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     title: "Cyenoo",
@@ -20,15 +22,18 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
-    icon: [{ url: "/icon", type: "image/png" }],
-    apple: [{ url: "/apple-icon", type: "image/png" }],
+    icon: [
+      { url: "/icon-192", sizes: "192x192", type: "image/png" },
+      { url: "/icon", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-icon", sizes: "180x180", type: "image/png" }],
   },
 };
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#123A6B" },
-    { media: "(prefers-color-scheme: dark)", color: "#0B1F3A" },
+    { media: "(prefers-color-scheme: light)", color: "#0032C7" },
+    { media: "(prefers-color-scheme: dark)", color: "#0032C7" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -44,8 +49,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
         <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <PwaRegister />
+      </body>
     </html>
   );
 }
