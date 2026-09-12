@@ -1,6 +1,6 @@
 {
   "name": "safepay-togo",
-  "version": "5.0.1-pwa",
+  "version": "5.0.2-pwa-fix",
   "private": true,
   "scripts": {
     "dev": "next dev",
