@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import InstallAppButton from "@/components/InstallAppButton";
 
 type Phase = "intro" | "ready";
 
@@ -35,7 +36,6 @@ export default function Home() {
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReduceMotion(media.matches);
-    // Always show splash on every app open (except reduced-motion)
     if (media.matches) {
       setPhase("ready");
       return;
@@ -162,7 +162,8 @@ export default function Home() {
           <h1>Votre argent, en toute simplicité.</h1>
           <p>Envoyez, recevez et payez à distance avec une protection pensée pour vous.</p>
         </div>
-        <div className="onboarding-actions">
+        <div className="onboarding-actions" style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
+          <InstallAppButton />
           <Link href="/auth" className="safepay-primary onboarding-primary">Créer un compte</Link>
           <Link href="/login" className="onboarding-secondary">J'ai déjà un compte</Link>
         </div>
