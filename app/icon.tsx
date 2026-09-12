@@ -17,81 +17,74 @@ export default function Icon() {
           position: "relative",
         }}
       >
-        {/* Orbit */}
+        {/* Orbit ring */}
         <div
           style={{
             position: "absolute",
-            width: 360,
-            height: 130,
+            width: 340,
+            height: 120,
             borderRadius: "50%",
-            border: "12px solid rgba(255,255,255,0.35)",
+            border: "11px solid rgba(255,255,255,0.35)",
             transform: "rotate(-26deg)",
-            top: 200,
-            left: 76,
+            top: 210,
+            left: 86,
           }}
         />
 
-        {/* Letter C */}
+        {/* Letter C — centered */}
         <div
           style={{
             position: "absolute",
-            left: 70,
-            top: 70,
-            width: 320,
-            height: 360,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-start",
-            fontSize: 340,
+            left: 88,
+            top: 78,
+            fontSize: 320,
             fontWeight: 800,
             color: "#ffffff",
             fontFamily: "Arial Black, Arial, Helvetica, sans-serif",
             lineHeight: 1,
-            letterSpacing: "-0.06em",
+            letterSpacing: "-0.08em",
             textShadow: "0 10px 24px rgba(0,0,40,0.25)",
           }}
         >
           C
         </div>
 
-        {/* 3 bars INSIDE the C opening (right side of C) */}
+        {/* 3 signal bars nested INSIDE the open mouth of the C */}
         <div
           style={{
             position: "absolute",
-            left: 250,
-            top: 190,
-            width: 140,
-            height: 170,
+            left: 218,
+            top: 200,
+            height: 150,
             display: "flex",
             alignItems: "flex-end",
-            justifyContent: "flex-start",
-            gap: 14,
+            gap: 12,
           }}
         >
           <div
             style={{
-              width: 32,
-              height: 64,
+              width: 28,
+              height: 56,
               background: "#ffffff",
-              borderRadius: 7,
+              borderRadius: 6,
               boxShadow: "0 4px 10px rgba(0,0,40,0.2)",
             }}
           />
           <div
             style={{
-              width: 32,
-              height: 104,
+              width: 28,
+              height: 92,
               background: "#ffffff",
-              borderRadius: 7,
+              borderRadius: 6,
               boxShadow: "0 4px 10px rgba(0,0,40,0.2)",
             }}
           />
           <div
             style={{
-              width: 32,
-              height: 148,
+              width: 28,
+              height: 130,
               background: "#ffffff",
-              borderRadius: 7,
+              borderRadius: 6,
               boxShadow: "0 4px 10px rgba(0,0,40,0.2)",
             }}
           />
