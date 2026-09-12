@@ -13,46 +13,49 @@ export function GET() {
           alignItems: "center",
           justifyContent: "center",
           background: "#0032C7",
+          position: "relative",
         }}
       >
         <div
           style={{
             position: "absolute",
-            width: 120,
-            height: 44,
-            border: "6px solid rgba(255,255,255,0.45)",
+            width: 142,
+            height: 52,
             borderRadius: "50%",
+            border: "5px solid rgba(255,255,255,0.38)",
             transform: "rotate(-28deg)",
-            top: 80,
+            top: 70,
+            left: 25,
           }}
         />
         <div
           style={{
-            fontSize: 112,
-            fontWeight: 800,
-            color: "#fff",
-            fontFamily: "Arial, Helvetica, sans-serif",
-            lineHeight: 1,
-            marginLeft: -8,
+            position: "absolute",
+            width: 114,
+            height: 114,
+            borderRadius: "50%",
+            border: "20px solid #ffffff",
+            borderRightColor: "transparent",
+            borderBottomColor: "transparent",
+            transform: "rotate(45deg)",
+            top: 39,
+            left: 29,
           }}
-        >
-          C
-        </div>
+        />
         <div
           style={{
             position: "absolute",
             display: "flex",
             alignItems: "flex-end",
-            gap: 4,
-            left: 84,
+            gap: 6,
+            left: 92,
             top: 74,
-            height: 52,
+            height: 60,
           }}
         >
-          <div style={{ width: 10, height: 18, background: "#fff", borderRadius: 2 }} />
-          <div style={{ width: 10, height: 26, background: "#fff", borderRadius: 2 }} />
-          <div style={{ width: 10, height: 34, background: "#fff", borderRadius: 2 }} />
-          <div style={{ width: 10, height: 44, background: "#fff", borderRadius: 2 }} />
+          <div style={{ width: 13, height: 26, background: "#fff", borderRadius: 3 }} />
+          <div style={{ width: 13, height: 40, background: "#fff", borderRadius: 3 }} />
+          <div style={{ width: 13, height: 56, background: "#fff", borderRadius: 3 }} />
         </div>
       </div>
     ),

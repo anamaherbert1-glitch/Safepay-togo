@@ -14,46 +14,49 @@ export default function AppleIcon() {
           alignItems: "center",
           justifyContent: "center",
           background: "#0032C7",
+          position: "relative",
         }}
       >
         <div
           style={{
             position: "absolute",
-            width: 112,
-            height: 42,
-            border: "6px solid rgba(255,255,255,0.45)",
+            width: 132,
+            height: 48,
             borderRadius: "50%",
+            border: "5px solid rgba(255,255,255,0.38)",
             transform: "rotate(-28deg)",
-            top: 76,
+            top: 66,
+            left: 24,
           }}
         />
         <div
           style={{
-            fontSize: 108,
-            fontWeight: 800,
-            color: "#fff",
-            fontFamily: "Arial, Helvetica, sans-serif",
-            lineHeight: 1,
-            marginLeft: -8,
+            position: "absolute",
+            width: 108,
+            height: 108,
+            borderRadius: "50%",
+            border: "18px solid #ffffff",
+            borderRightColor: "transparent",
+            borderBottomColor: "transparent",
+            transform: "rotate(45deg)",
+            top: 36,
+            left: 28,
           }}
-        >
-          C
-        </div>
+        />
         <div
           style={{
             position: "absolute",
             display: "flex",
             alignItems: "flex-end",
-            gap: 4,
-            left: 80,
+            gap: 6,
+            left: 88,
             top: 70,
-            height: 50,
+            height: 56,
           }}
         >
-          <div style={{ width: 10, height: 18, background: "#fff", borderRadius: 2 }} />
-          <div style={{ width: 10, height: 26, background: "#fff", borderRadius: 2 }} />
-          <div style={{ width: 10, height: 34, background: "#fff", borderRadius: 2 }} />
-          <div style={{ width: 10, height: 44, background: "#fff", borderRadius: 2 }} />
+          <div style={{ width: 12, height: 24, background: "#fff", borderRadius: 3 }} />
+          <div style={{ width: 12, height: 38, background: "#fff", borderRadius: 3 }} />
+          <div style={{ width: 12, height: 52, background: "#fff", borderRadius: 3 }} />
         </div>
       </div>
     ),

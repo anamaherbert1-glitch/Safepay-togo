@@ -3,7 +3,13 @@ import { ImageResponse } from "next/og";
 export const size = { width: 512, height: 512 };
 export const contentType = "image/png";
 
-/** App icon 512x512 — required for PWA install */
+/**
+ * Cyenoo app icon — high quality mark:
+ * - Letter C (open on the right)
+ * - 3 rising bars seated INSIDE the C opening
+ * - Soft orbit ring
+ * - Centered on solid brand blue
+ */
 export default function Icon() {
   return new ImageResponse(
     (
@@ -15,47 +21,79 @@ export default function Icon() {
           alignItems: "center",
           justifyContent: "center",
           background: "#0032C7",
+          position: "relative",
         }}
       >
+        {/* Orbit ring — behind mark */}
         <div
           style={{
             position: "absolute",
-            width: 320,
-            height: 118,
-            border: "16px solid rgba(255,255,255,0.45)",
+            width: 380,
+            height: 140,
             borderRadius: "50%",
+            border: "14px solid rgba(255,255,255,0.38)",
             transform: "rotate(-28deg)",
-            top: 210,
+            top: 186,
+            left: 66,
           }}
         />
+
+        {/* Letter C as thick arc using nested circles */}
         <div
           style={{
-            fontSize: 300,
-            fontWeight: 800,
-            color: "#FFFFFF",
-            fontFamily: "Arial, Helvetica, sans-serif",
-            lineHeight: 1,
-            marginLeft: -24,
-            textShadow: "0 10px 24px rgba(0,0,40,0.3)",
+            position: "absolute",
+            width: 300,
+            height: 300,
+            borderRadius: "50%",
+            border: "52px solid #ffffff",
+            borderRightColor: "transparent",
+            borderBottomColor: "transparent",
+            transform: "rotate(45deg)",
+            top: 106,
+            left: 78,
+            boxShadow: "0 12px 28px rgba(0,0,40,0.22)",
           }}
-        >
-          C
-        </div>
+        />
+
+        {/* 3 rising bars INSIDE the C opening */}
         <div
           style={{
             position: "absolute",
             display: "flex",
             alignItems: "flex-end",
-            gap: 12,
-            left: 230,
+            gap: 16,
+            left: 248,
             top: 200,
-            height: 140,
+            height: 160,
           }}
         >
-          <div style={{ width: 28, height: 48, background: "#fff", borderRadius: 6 }} />
-          <div style={{ width: 28, height: 72, background: "#fff", borderRadius: 6 }} />
-          <div style={{ width: 28, height: 96, background: "#fff", borderRadius: 6 }} />
-          <div style={{ width: 28, height: 124, background: "#fff", borderRadius: 6 }} />
+          <div
+            style={{
+              width: 36,
+              height: 70,
+              background: "#ffffff",
+              borderRadius: 8,
+              boxShadow: "0 6px 14px rgba(0,0,40,0.18)",
+            }}
+          />
+          <div
+            style={{
+              width: 36,
+              height: 110,
+              background: "#ffffff",
+              borderRadius: 8,
+              boxShadow: "0 6px 14px rgba(0,0,40,0.18)",
+            }}
+          />
+          <div
+            style={{
+              width: 36,
+              height: 150,
+              background: "#ffffff",
+              borderRadius: 8,
+              boxShadow: "0 6px 14px rgba(0,0,40,0.18)",
+            }}
+          />
         </div>
       </div>
     ),
