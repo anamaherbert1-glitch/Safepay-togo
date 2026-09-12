@@ -3,7 +3,7 @@ import { ImageResponse } from "next/og";
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 
-/** Apple touch icon for iOS home screen */
+/** Apple touch icon — logo mark only */
 export default function AppleIcon() {
   return new ImageResponse(
     (
@@ -14,36 +14,49 @@ export default function AppleIcon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(160deg, #0B1F3A 0%, #123A6B 55%, #1A4F8C 100%)",
-          borderRadius: 40,
+          background: "#0052FF",
         }}
       >
         <div
           style={{
-            display: "flex",
-            alignItems: "flex-end",
-            gap: 6,
-            marginLeft: 8,
+            position: "absolute",
+            width: 120,
+            height: 42,
+            border: "6px solid rgba(255,255,255,0.45)",
+            borderRadius: "50%",
+            transform: "rotate(-26deg)",
+            top: 78,
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            fontSize: 118,
+            fontWeight: 800,
+            color: "#FFFFFF",
+            fontFamily: "Arial, Helvetica, sans-serif",
+            lineHeight: 1,
+            left: 24,
+            top: 24,
           }}
         >
-          <div style={{ width: 14, height: 36, background: "#fff", borderRadius: 4 }} />
-          <div style={{ width: 14, height: 50, background: "#fff", borderRadius: 4 }} />
-          <div style={{ width: 14, height: 64, background: "#fff", borderRadius: 4 }} />
-          <div style={{ width: 14, height: 78, background: "#fff", borderRadius: 4 }} />
+          C
         </div>
         <div
           style={{
             position: "absolute",
-            fontSize: 110,
-            fontWeight: 800,
-            color: "rgba(255,255,255,0.95)",
-            fontFamily: "system-ui, sans-serif",
-            left: 22,
-            top: 28,
-            lineHeight: 1,
+            display: "flex",
+            alignItems: "flex-end",
+            gap: 4,
+            left: 78,
+            top: 72,
+            height: 52,
           }}
         >
-          C
+          <div style={{ width: 10, height: 18, background: "#FFFFFF", borderRadius: 2 }} />
+          <div style={{ width: 10, height: 26, background: "#FFFFFF", borderRadius: 2 }} />
+          <div style={{ width: 10, height: 34, background: "#FFFFFF", borderRadius: 2 }} />
+          <div style={{ width: 10, height: 44, background: "#FFFFFF", borderRadius: 2 }} />
         </div>
       </div>
     ),
