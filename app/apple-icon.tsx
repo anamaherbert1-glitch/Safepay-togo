@@ -1,8 +1,9 @@
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
+export const size = { width: 180, height: 180 };
+export const contentType = "image/png";
 
-export function GET() {
+export default function AppleIcon() {
   return new ImageResponse(
     (
       <div
@@ -19,21 +20,21 @@ export function GET() {
         <div
           style={{
             position: "absolute",
-            width: 134,
-            height: 48,
+            width: 126,
+            height: 46,
             borderRadius: "50%",
-            border: "5px solid rgba(255,255,255,0.35)",
+            border: "4px solid rgba(255,255,255,0.35)",
             transform: "rotate(-26deg)",
-            top: 74,
-            left: 29,
+            top: 70,
+            left: 27,
           }}
         />
         <div
           style={{
             position: "absolute",
-            left: 24,
-            top: 24,
-            fontSize: 128,
+            left: 22,
+            top: 22,
+            fontSize: 120,
             fontWeight: 800,
             color: "#fff",
             fontFamily: "Arial Black, Arial, Helvetica, sans-serif",
@@ -46,20 +47,20 @@ export function GET() {
         <div
           style={{
             position: "absolute",
-            left: 94,
-            top: 70,
-            height: 64,
+            left: 88,
+            top: 66,
+            height: 60,
             display: "flex",
             alignItems: "flex-end",
             gap: 5,
           }}
         >
-          <div style={{ width: 12, height: 24, background: "#fff", borderRadius: 2 }} />
-          <div style={{ width: 12, height: 38, background: "#fff", borderRadius: 2 }} />
-          <div style={{ width: 12, height: 56, background: "#fff", borderRadius: 2 }} />
+          <div style={{ width: 11, height: 22, background: "#fff", borderRadius: 2 }} />
+          <div style={{ width: 11, height: 36, background: "#fff", borderRadius: 2 }} />
+          <div style={{ width: 11, height: 52, background: "#fff", borderRadius: 2 }} />
         </div>
       </div>
     ),
-    { width: 192, height: 192 }
+    { ...size }
   );
 }
