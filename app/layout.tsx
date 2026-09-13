@@ -1,11 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import "./cyenoo-fixes.css";
-import "./cyenoo-settings.css";
-import "./cyenoo-polish.css";
-import "./cyenoo-responsive.css";
-import "./cyenoo-theme.css";
-import "./cyenoo-contrast.css";
 import PwaRegister from "@/components/PwaRegister";
 
 export const metadata: Metadata = {
