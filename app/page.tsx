@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import InstallAppButton from "@/components/InstallAppButton";
 
 type Phase = "intro" | "ready";
@@ -30,6 +32,7 @@ function CyenooMark({ size = 72, variant = "blue" }: { size?: number; variant?: 
 }
 
 export default function Home() {
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>("intro");
   const [reduceMotion, setReduceMotion] = useState(false);
 
@@ -43,6 +46,27 @@ export default function Home() {
     const t = window.setTimeout(() => setPhase("ready"), 5000);
     return () => window.clearTimeout(t);
   }, []);
+
+  // Session permanente : si déjà connecté, aller au dashboard
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const s = createClient();
+        const { data: { session } } = await s.auth.getSession();
+        if (!active) return;
+        if (session?.user) {
+          router.replace("/dashboard");
+          return;
+        }
+      } catch {
+        // ignore — show onboarding if no session
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   function skip() {
     setPhase("ready");
