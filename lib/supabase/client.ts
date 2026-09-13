@@ -1,9 +1,9 @@
 import { createBrowserClient } from "@supabase/ssr";
 
 /**
- * Browser Supabase client with durable session storage.
- * Session stays on the device until the user explicitly signs out
- * (or uninstalls the app / clears site data).
+ * Browser Supabase client — session is stored in localStorage under "cyenoo-auth"
+ * and mirrored in cookies (via @supabase/ssr). It survives closing the PWA until
+ * the user explicitly signs out or clears site data / uninstalls the app.
  */
 export function createClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -20,14 +20,13 @@ export function createClient() {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      // localStorage survives closing the PWA / browser tab
+      flowType: "pkce",
       storage: isBrowser ? window.localStorage : undefined,
       storageKey: "cyenoo-auth",
       experimental: { passkey: true },
     },
-    // Cookies also kept long-lived for SSR / next navigations
     cookieOptions: {
-      maxAge: 60 * 60 * 24 * 400, // ~400 days
+      maxAge: 60 * 60 * 24 * 365, // 1 year
       path: "/",
       sameSite: "lax",
     },
