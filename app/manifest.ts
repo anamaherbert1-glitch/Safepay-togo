@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
+import { ICON_VERSION } from "@/lib/cyenoo-icon-data";
 
 export default function manifest(): MetadataRoute.Manifest {
+  const v = ICON_VERSION;
   return {
     name: "Cyenoo",
     short_name: "Cyenoo",
@@ -14,15 +16,21 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "fr",
     icons: [
       {
-        src: "/icons/cyenoo-icon.svg",
-        sizes: "1024x1024",
-        type: "image/svg+xml",
+        src: `/icon-192?v=${v}`,
+        sizes: "192x192",
+        type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icons/cyenoo-icon.svg",
-        sizes: "1024x1024",
-        type: "image/svg+xml",
+        src: `/icon-512?v=${v}`,
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: `/icon-512?v=${v}`,
+        sizes: "512x512",
+        type: "image/png",
         purpose: "maskable",
       },
     ],
