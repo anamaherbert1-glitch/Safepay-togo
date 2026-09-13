@@ -7,6 +7,9 @@ import { getNotificationSoundEnabled, getTheme, type SafePayTheme } from "@/lib/
 import { playNotificationSound } from "@/lib/notificationSound";
 import { useSafePayLanguage } from "@/lib/i18n";
 
+const PROFILE_FLAG = "cyenoo-profile-complete";
+const BIO_FLAG = "cyenoo-biometric-unlocked";
+
 function HomeIcon() { return <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 10.5 12 3l8.5 7.5"/><path d="M5.5 9.5v10h13v-10M9.5 19.5v-6h5v6"/></svg>; }
 function TransactionsIcon() { return <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 7h11"/><path d="m14 4 3 3-3 3"/><path d="M18 17H7"/><path d="m10 14-3 3 3 3"/></svg>; }
 function NotificationsIcon() { return <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>; }
@@ -33,6 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     const load = async () => {
       setChecking(true);
       try {
+        // Restore durable session from localStorage / cookies
         const { data: { session }, error: sessionError } = await withTimeout(supabase.auth.getSession());
         if (!active) return;
 
@@ -47,7 +51,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           user = u2;
         }
 
-        const cachedComplete = typeof window !== "undefined" && sessionStorage.getItem("safepay-profile-complete") === "1";
+        const cachedComplete =
+          typeof window !== "undefined" &&
+          (localStorage.getItem(PROFILE_FLAG) === "1" || sessionStorage.getItem("safepay-profile-complete") === "1");
+
         if (!cachedComplete) {
           const { data: rawProfile, error: profileError } = await withTimeout(supabase.rpc("get_my_profile"));
           if (!active) return;
@@ -61,11 +68,14 @@ export function AppShell({ children }: { children: ReactNode }) {
             router.replace("/auth?resume=1");
             return;
           }
-          try { sessionStorage.setItem("safepay-profile-complete", "1"); } catch {}
+          try {
+            localStorage.setItem(PROFILE_FLAG, "1");
+            sessionStorage.setItem("safepay-profile-complete", "1");
+          } catch {}
           setAvatarUrl(profile.avatar_url || "");
         }
 
-        // Biometric is optional — never force logout if passkey fails/cancelled
+        // Biometric optional — never force logout
         try {
           const { data: security } = await withTimeout(
             supabase.from("user_security").select("biometric_enabled").eq("user_id", user.id).maybeSingle()
@@ -74,6 +84,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             security?.biometric_enabled &&
             pathname !== "/profile" &&
             typeof window !== "undefined" &&
+            sessionStorage.getItem(BIO_FLAG) !== "1" &&
             sessionStorage.getItem("safepay-biometric-unlocked") !== "1"
           ) {
             const auth = supabase.auth as any;
@@ -84,7 +95,10 @@ export function AppShell({ children }: { children: ReactNode }) {
               if (!listed.error && Array.isArray(listed.data) && listed.data.length > 0) {
                 const { error: passkeyError } = await auth.signInWithPasskey();
                 if (!passkeyError) {
-                  try { sessionStorage.setItem("safepay-biometric-unlocked", "1"); } catch {}
+                  try {
+                    sessionStorage.setItem(BIO_FLAG, "1");
+                    sessionStorage.setItem("safepay-biometric-unlocked", "1");
+                  } catch {}
                 }
               }
             }
@@ -120,16 +134,25 @@ export function AppShell({ children }: { children: ReactNode }) {
     };
 
     load();
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
+
+    // Only react to explicit sign-out — not transient null sessions on reload
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || (event === "USER_DELETED")) {
         setAuthorized(false);
         try {
+          localStorage.removeItem(PROFILE_FLAG);
           sessionStorage.removeItem("safepay-profile-complete");
+          sessionStorage.removeItem(BIO_FLAG);
           sessionStorage.removeItem("safepay-biometric-unlocked");
         } catch {}
         router.replace("/login");
+        return;
+      }
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
+        if (session?.user) setAuthorized(true);
       }
     });
+
     const onAvatarUpdated = (event: Event) => {
       const custom = event as CustomEvent<{ url?: string }>;
       setAvatarUrl(custom.detail?.url || "");
@@ -142,8 +165,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         else document.documentElement.dataset.theme = theme;
       }
     };
+    // Biometric unlock is per-session only (cleared on hide); auth session stays
     const clearBiometricOnPageHide = () => {
-      try { sessionStorage.removeItem("safepay-biometric-unlocked"); } catch {}
+      try {
+        sessionStorage.removeItem(BIO_FLAG);
+        sessionStorage.removeItem("safepay-biometric-unlocked");
+      } catch {}
     };
     window.addEventListener("safepay-avatar-updated", onAvatarUpdated);
     window.addEventListener("safepay-theme-updated", onThemeUpdated);
