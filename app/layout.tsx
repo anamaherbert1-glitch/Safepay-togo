@@ -1,5 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./cyenoo-fixes.css";
+import "./cyenoo-settings.css";
+import "./cyenoo-polish.css";
+import "./cyenoo-responsive.css";
+import "./cyenoo-theme.css";
+import "./cyenoo-contrast.css";
 import PwaRegister from "@/components/PwaRegister";
 
 export const metadata: Metadata = {
@@ -16,8 +22,11 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
-    icon: [{ url: "/icons/cyenoo-icon.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/icons/cyenoo-icon.svg", type: "image/svg+xml" }],
+    icon: [
+      { url: "/icons/cyenoo-icon.svg?v=20260913ref", type: "image/svg+xml" },
+      { url: "/icons/cyenoo-icon-512.svg?v=20260913ref", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/icons/apple-icon-180.svg?v=20260913ref", type: "image/svg+xml" }],
   },
 };
 
