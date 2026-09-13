@@ -1,0 +1,1 @@
+The Cyenoo app icon assets are stored in this directory.
