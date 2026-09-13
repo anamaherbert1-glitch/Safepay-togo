@@ -1,4 +1,4 @@
 export const ICON_VERSION = "20260913ref";
-export { ICON_192_BASE64 } from "./cyenoo-icon-192";
-export { ICON_512_BASE64 } from "./cyenoo-icon-512";
-export { ICON_180_BASE64 } from "./cyenoo-icon-180";
+export { B64 as ICON_192_BASE64 } from "./icon-chunks/assemble192";
+export { B64 as ICON_512_BASE64 } from "./icon-chunks/assemble512";
+export { B64 as ICON_180_BASE64 } from "./icon-chunks/assemble180";
