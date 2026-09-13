@@ -23,10 +23,10 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icons/cyenoo-icon.svg?v=20260913ref", type: "image/svg+xml" },
-      { url: "/icons/cyenoo-icon-512.svg?v=20260913ref", type: "image/svg+xml" },
+      { url: "/icon-192?v=20260913ref", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512?v=20260913ref", sizes: "512x512", type: "image/png" },
     ],
-    apple: [{ url: "/icons/apple-icon-180.svg?v=20260913ref", type: "image/svg+xml" }],
+    apple: [{ url: "/apple-icon?v=20260913ref", sizes: "180x180", type: "image/png" }],
   },
 };
 

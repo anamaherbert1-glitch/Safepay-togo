@@ -11,21 +11,21 @@
   "lang": "fr",
   "icons": [
     {
-      "src": "/icons/cyenoo-icon.svg?v=20260913ref",
+      "src": "/icon-192?v=20260913ref",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/cyenoo-icon-512.svg?v=20260913ref",
+      "src": "/icon-512?v=20260913ref",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/cyenoo-icon-512.svg?v=20260913ref",
+      "src": "/icon-512?v=20260913ref",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ]
