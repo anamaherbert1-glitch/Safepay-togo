@@ -1,30 +1,35 @@
-import { parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 
-export type SupportedCountry = {
-  code: CountryCode;
+export type CyenooCountry = {
+  code: string;
   name: string;
-  flag: string;
   callingCode: string;
+  flag: string;
   currency: string;
 };
 
-export const SAFE_PAY_COUNTRIES: SupportedCountry[] = [
-  { code: "TG", name: "Togo", flag: "🇹🇬", callingCode: "+228", currency: "XOF" },
-  { code: "BJ", name: "Bénin", flag: "🇧🇯", callingCode: "+229", currency: "XOF" },
-  { code: "CI", name: "Côte d’Ivoire", flag: "🇨🇮", callingCode: "+225", currency: "XOF" },
-  { code: "BF", name: "Burkina Faso", flag: "🇧🇫", callingCode: "+226", currency: "XOF" },
-  { code: "GH", name: "Ghana", flag: "🇬🇭", callingCode: "+233", currency: "GHS" },
-  { code: "NG", name: "Nigeria", flag: "🇳🇬", callingCode: "+234", currency: "NGN" },
-  { code: "FR", name: "France", flag: "🇫🇷", callingCode: "+33", currency: "EUR" }
+export const CYENOO_COUNTRIES: CyenooCountry[] = [
+  { code: "TG", name: "Togo", callingCode: "+228", flag: "🇹🇬", currency: "XOF" },
+  { code: "BJ", name: "Bénin", callingCode: "+229", flag: "🇧🇯", currency: "XOF" },
+  { code: "CI", name: "Côte d'Ivoire", callingCode: "+225", flag: "🇨🇮", currency: "XOF" },
+  { code: "BF", name: "Burkina Faso", callingCode: "+226", flag: "🇧🇫", currency: "XOF" },
+  { code: "GH", name: "Ghana", callingCode: "+233", flag: "🇬🇭", currency: "GHS" },
+  { code: "NG", name: "Nigeria", callingCode: "+234", flag: "🇳🇬", currency: "NGN" },
+  { code: "FR", name: "France", callingCode: "+33", flag: "🇫🇷", currency: "EUR" },
 ];
 
-export function validatePhone(country: CountryCode, localNumber: string) {
-  const parsed = parsePhoneNumberFromString(localNumber.trim(), country);
-  if (!parsed) return { valid: false as const, e164: "", reason: "Numéro de téléphone invalide." };
-  if (!parsed.isValid()) return { valid: false as const, e164: "", reason: "Ce numéro ne respecte pas le plan de numérotation du pays sélectionné." };
-  return { valid: true as const, e164: parsed.number, reason: "" };
+export function onlyPhoneCharacters(value: string) {
+  return value.replace(/[^\d\s+()-]/g, "");
 }
 
-export function onlyPhoneCharacters(value: string) {
-  return value.replace(/[^0-9\s().-]/g, "");
+export function validatePhone(countryCode: string, local: string): { valid: true; e164: string } | { valid: false; reason: string } {
+  const country = CYENOO_COUNTRIES.find((c) => c.code === countryCode);
+  if (!country) return { valid: false, reason: "Pays non supporté." };
+  const raw = local.trim();
+  if (!raw) return { valid: false, reason: "Entrez votre numéro de téléphone." };
+  const parsed = parsePhoneNumberFromString(raw, countryCode as any);
+  if (!parsed || !parsed.isValid()) {
+    return { valid: false, reason: `Numéro invalide pour ${country.name}.` };
+  }
+  return { valid: true, e164: parsed.format("E.164") };
 }

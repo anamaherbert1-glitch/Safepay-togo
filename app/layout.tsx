@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import "./safepay-fixes.css";
-import "./safepay-settings.css";
-import "./safepay-polish.css";
-import "./safepay-responsive.css";
-import "./safepay-theme.css";
+import "./cyenoo-fixes.css";
+import "./cyenoo-settings.css";
+import "./cyenoo-polish.css";
+import "./cyenoo-responsive.css";
+import "./cyenoo-theme.css";
 import "./cyenoo-contrast.css";
 import PwaRegister from "@/components/PwaRegister";
 
@@ -41,7 +41,7 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-const themeBootstrap = `(() => { try { const t = localStorage.getItem('safepay-theme'); if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; const l = localStorage.getItem('safepay-language'); if (l === 'en' || l === 'fr') document.documentElement.lang = l; } catch (_) {} })()`;
+const themeBootstrap = `(() => { try { const t = localStorage.getItem('cyenoo-theme'); if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; const l = localStorage.getItem('cyenoo-language'); if (l === 'en' || l === 'fr') document.documentElement.lang = l; } catch (_) {} })()`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
