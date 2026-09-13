@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 const providers = [
   { value: "T-Money", label: "T-Money" },
   { value: "Moov Money", label: "Moov Money / Flooz" },
-  { value: "Carte bancaire", label: "Carte bancaire" },
+  { value: "Orange Money", label: "Orange Money (Burkina)" },
 ];
 
 export default function DepositPage() {
@@ -60,18 +60,18 @@ export default function DepositPage() {
   }
 
   return (
-    <main className="safepay-shell safepay-dashboard">
+    <main className="safepay-shell cyenoo-shell safepay-dashboard">
       <header className="sp-header"><button className="sp-back" onClick={() => router.back()} aria-label="Retour">←</button><strong>Recharger</strong><span style={{ width: 36 }} /></header>
       <section className="sp-content">
-        <p className="sp-eyebrow">Wallet SafePay</p>
+        <p className="sp-eyebrow">Wallet Cyenoo</p>
         <h1 className="sp-title">Recharger votre Wallet</h1>
-        <p className="sp-muted">La recharge est confirmée par CinetPay avant que le solde ne soit crédité.</p>
+        <p className="sp-muted">La recharge est confirmée par Mobile Money (T-Money, Moov, Orange selon le pays).</p>
         <form className="sp-form" onSubmit={submit}>
-          <label>Mode de paiement<select value={provider} onChange={(e) => setProvider(e.target.value)}>{providers.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
-          <label>Numéro de paiement<input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+228 90 00 00 00" inputMode="tel" autoComplete="tel" /></label>
-          <label>Montant (XOF)<input value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ""))} placeholder="25000" inputMode="numeric" /></label>
+          <label>Montant (XOF)<input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Ex. 5000" required /></label>
+          <label>Mode de paiement<select value={provider} onChange={(e) => setProvider(e.target.value)}>{providers.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}</select></label>
+          <label>Numéro Mobile Money<input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+228…" required /></label>
           {error && <p className="sp-form-error" role="alert">{error}</p>}
-          <button className="safepay-primary sp-submit" disabled={busy}>{busy ? "Initialisation…" : "Continuer vers le paiement"}</button>
+          <button className="safepay-primary cyenoo-primary" type="submit" disabled={busy}>{busy ? "Traitement…" : "Continuer"}</button>
         </form>
       </section>
     </main>
