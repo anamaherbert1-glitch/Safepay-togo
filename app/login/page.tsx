@@ -11,7 +11,20 @@ function EyeIcon({ hidden }: { hidden: boolean }) { return hidden ? <svg width="
 function friendlyAuthError(message: string) { const text = message.toLowerCase(); if (text.includes("unsupported phone provider") || text.includes("phone provider") || text.includes("phone_provider_disabled") || text.includes("otp_disabled")) return "La vérification SMS n’est pas encore activée dans Supabase. Le fournisseur SMS doit être configuré avant la connexion par téléphone."; if (text.includes("provider is not enabled")) return "Le fournisseur d’authentification demandé n’est pas encore activé dans Supabase."; if (text.includes("signups not allowed for otp")) return "Aucun compte Cyenoo n’est associé à ce numéro. Créez d’abord un compte."; if (text.includes("rate limit")) return "Trop de demandes ont été envoyées. Attendez quelques minutes puis réessayez."; return message; }
 function withTimeout<T>(promise: PromiseLike<T>, ms = 20000): Promise<T> { return Promise.race([Promise.resolve(promise), new Promise<T>((_, reject) => setTimeout(() => reject(new Error("La demande prend trop de temps. Vérifiez votre connexion Internet puis réessayez.")), ms))]); }
 function detectCountryCode() { if (typeof window === "undefined") return "TG"; const tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if (tz === "Africa/Lome") return "TG"; if (tz === "Africa/Porto-Novo") return "BJ"; if (tz === "Africa/Abidjan") return "CI"; if (tz === "Africa/Ouagadougou") return "BF"; if (tz === "Africa/Accra") return "GH"; if (tz === "Africa/Lagos") return "NG"; if (tz === "Europe/Paris") return "FR"; const language = (navigator.language || "").toLowerCase(); if (language.endsWith("-tg")) return "TG"; if (language.endsWith("-bj")) return "BJ"; if (language.endsWith("-ci")) return "CI"; if (language.endsWith("-bf")) return "BF"; if (language.endsWith("-gh")) return "GH"; if (language.endsWith("-ng")) return "NG"; if (language.endsWith("-fr")) return "FR"; return "TG"; }
-export default function LoginPage() { const router = useRouter(); const [countryCode, setCountryCode] = useState("TG"); const [phoneLocal, setPhoneLocal] = useState(""); const [phoneE164, setPhoneE164] = useState(""); const [otp, setOtp] = useState(""); const [otpVisible, setOtpVisible] = useState(false); const [otpSent, setOtpSent] = useState(false); const [busy, setBusy] = useState(false); const [message, setMessage] = useState(""); const [noticeKind, setNoticeKind] = useState<NoticeKind>("info"); const country = SAFE_PAY_COUNTRIES.find(c => c.code === countryCode) ?? SAFE_PAY_COUNTRIES[0]; useEffect(() => { setCountryCode(detectCountryCode()); }, []); function notice(text: string, kind: NoticeKind = "info") { setMessage(text); setNoticeKind(kind); } function clearNotice() { setMessage(""); setNoticeKind("info"); }
+export default function LoginPage() { const router = useRouter(); const [countryCode, setCountryCode] = useState("TG"); const [phoneLocal, setPhoneLocal] = useState(""); const [phoneE164, setPhoneE164] = useState(""); const [otp, setOtp] = useState(""); const [otpVisible, setOtpVisible] = useState(false); const [otpSent, setOtpSent] = useState(false); const [busy, setBusy] = useState(false); const [message, setMessage] = useState(""); const [noticeKind, setNoticeKind] = useState<NoticeKind>("info"); const country = SAFE_PAY_COUNTRIES.find(c => c.code === countryCode) ?? SAFE_PAY_COUNTRIES[0]; useEffect(() => { setCountryCode(detectCountryCode()); }, []);
+ useEffect(() => {
+   let active = true;
+   (async () => {
+     try {
+       const s = createClient();
+       const { data: { session } } = await s.auth.getSession();
+       if (!active) return;
+       if (session?.user) router.replace("/dashboard");
+     } catch {}
+   })();
+   return () => { active = false; };
+ }, [router]);
+ function notice(text: string, kind: NoticeKind = "info") { setMessage(text); setNoticeKind(kind); } function clearNotice() { setMessage(""); setNoticeKind("info"); }
  async function sendPhoneOtp(e: FormEvent) { e.preventDefault(); clearNotice(); const result = validatePhone(country.code, phoneLocal); if (!result.valid) { notice(result.reason, "error"); return; } setBusy(true); try { const s = createClient(); const { error: otpError } = await withTimeout(s.auth.signInWithOtp({ phone: result.e164, options: { shouldCreateUser: false } })); if (otpError) { notice(friendlyAuthError(otpError.message), "error"); return; } setPhoneE164(result.e164); setOtp(""); setOtpSent(true); notice("Code OTP envoyé. Entrez le code reçu pour vous connecter à Cyenoo.", "success"); } catch (err) { notice(friendlyAuthError(err instanceof Error ? err.message : "Impossible d’envoyer le code OTP."), "error"); } finally { setBusy(false); } }
  async function verifyPhoneOtp(e: FormEvent) {
   e.preventDefault();
@@ -20,8 +33,15 @@ export default function LoginPage() { const router = useRouter(); const [country
   setBusy(true);
   try {
     const s = createClient();
-    const { error: verifyError } = await withTimeout(s.auth.verifyOtp({ phone: phoneE164, token: otp, type: "sms" }));
+    const { data: verifyData, error: verifyError } = await withTimeout(s.auth.verifyOtp({ phone: phoneE164, token: otp, type: "sms" }));
     if (verifyError) { notice(friendlyAuthError(verifyError.message), "error"); return; }
+    // Force session into localStorage
+    if (verifyData?.session) {
+      await s.auth.setSession({
+        access_token: verifyData.session.access_token,
+        refresh_token: verifyData.session.refresh_token,
+      });
+    }
     await withTimeout(s.auth.getSession());
     const { data: { user }, error: userError } = await withTimeout(s.auth.getUser());
     if (userError || !user) { notice("Session non établie après OTP. Réessayez.", "error"); return; }
