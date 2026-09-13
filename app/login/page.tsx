@@ -13,5 +13,38 @@ function withTimeout<T>(promise: PromiseLike<T>, ms = 20000): Promise<T> { retur
 function detectCountryCode() { if (typeof window === "undefined") return "TG"; const tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if (tz === "Africa/Lome") return "TG"; if (tz === "Africa/Porto-Novo") return "BJ"; if (tz === "Africa/Abidjan") return "CI"; if (tz === "Africa/Ouagadougou") return "BF"; if (tz === "Africa/Accra") return "GH"; if (tz === "Africa/Lagos") return "NG"; if (tz === "Europe/Paris") return "FR"; const language = (navigator.language || "").toLowerCase(); if (language.endsWith("-tg")) return "TG"; if (language.endsWith("-bj")) return "BJ"; if (language.endsWith("-ci")) return "CI"; if (language.endsWith("-bf")) return "BF"; if (language.endsWith("-gh")) return "GH"; if (language.endsWith("-ng")) return "NG"; if (language.endsWith("-fr")) return "FR"; return "TG"; }
 export default function LoginPage() { const router = useRouter(); const [countryCode, setCountryCode] = useState("TG"); const [phoneLocal, setPhoneLocal] = useState(""); const [phoneE164, setPhoneE164] = useState(""); const [otp, setOtp] = useState(""); const [otpVisible, setOtpVisible] = useState(false); const [otpSent, setOtpSent] = useState(false); const [busy, setBusy] = useState(false); const [message, setMessage] = useState(""); const [noticeKind, setNoticeKind] = useState<NoticeKind>("info"); const country = SAFE_PAY_COUNTRIES.find(c => c.code === countryCode) ?? SAFE_PAY_COUNTRIES[0]; useEffect(() => { setCountryCode(detectCountryCode()); }, []); function notice(text: string, kind: NoticeKind = "info") { setMessage(text); setNoticeKind(kind); } function clearNotice() { setMessage(""); setNoticeKind("info"); }
  async function sendPhoneOtp(e: FormEvent) { e.preventDefault(); clearNotice(); const result = validatePhone(country.code, phoneLocal); if (!result.valid) { notice(result.reason, "error"); return; } setBusy(true); try { const s = createClient(); const { error: otpError } = await withTimeout(s.auth.signInWithOtp({ phone: result.e164, options: { shouldCreateUser: false } })); if (otpError) { notice(friendlyAuthError(otpError.message), "error"); return; } setPhoneE164(result.e164); setOtp(""); setOtpSent(true); notice("Code OTP envoyé. Entrez le code reçu pour vous connecter à Cyenoo.", "success"); } catch (err) { notice(friendlyAuthError(err instanceof Error ? err.message : "Impossible d’envoyer le code OTP."), "error"); } finally { setBusy(false); } }
- async function verifyPhoneOtp(e: FormEvent) { e.preventDefault(); clearNotice(); if (!/^\d{6}$/.test(otp)) { notice("Entrez le code OTP à 6 chiffres.", "error"); return; } setBusy(true); try { const s = createClient(); const { error: verifyError } = await withTimeout(s.auth.verifyOtp({ phone: phoneE164, token: otp, type: "sms" })); if (verifyError) { notice(friendlyAuthError(verifyError.message), "error"); return; } const { data: { user } } = await withTimeout(s.auth.getUser()); if (!user?.phone_confirmed_at) { notice("Le numéro n’est pas confirmé.", "error"); return; } const { data, error: bootstrapError } = await withTimeout(s.rpc("bootstrap_user_account")); if (bootstrapError || !data?.onboarding_complete) { await s.auth.signOut(); notice("Ce compte n’a pas terminé son inscription. Terminez d’abord la vérification du téléphone et du profil.", "error"); return; } router.replace("/dashboard"); } catch (err) { notice(friendlyAuthError(err instanceof Error ? err.message : "Impossible de vérifier le code."), "error"); } finally { setBusy(false); } }
+ async function verifyPhoneOtp(e: FormEvent) {
+  e.preventDefault();
+  clearNotice();
+  if (!/^\d{6}$/.test(otp)) { notice("Entrez le code OTP à 6 chiffres.", "error"); return; }
+  setBusy(true);
+  try {
+    const s = createClient();
+    const { error: verifyError } = await withTimeout(s.auth.verifyOtp({ phone: phoneE164, token: otp, type: "sms" }));
+    if (verifyError) { notice(friendlyAuthError(verifyError.message), "error"); return; }
+    await withTimeout(s.auth.getSession());
+    const { data: { user }, error: userError } = await withTimeout(s.auth.getUser());
+    if (userError || !user) { notice("Session non établie après OTP. Réessayez.", "error"); return; }
+    const { data: rawBootstrap, error: bootstrapError } = await withTimeout(s.rpc("bootstrap_user_account"));
+    if (bootstrapError) {
+      notice("Finalisez votre profil pour accéder à Cyenoo.", "info");
+      router.replace("/auth?resume=1");
+      return;
+    }
+    const boot = Array.isArray(rawBootstrap) ? rawBootstrap[0] : rawBootstrap;
+    if (!boot?.onboarding_complete) {
+      try { sessionStorage.removeItem("safepay-profile-complete"); } catch {}
+      notice("Dernière étape : complétez votre profil.", "info");
+      router.replace("/auth?resume=1");
+      return;
+    }
+    try { sessionStorage.setItem("safepay-profile-complete", "1"); } catch {}
+    router.replace("/dashboard");
+    router.refresh();
+  } catch (err) {
+    notice(friendlyAuthError(err instanceof Error ? err.message : "Impossible de vérifier le code."), "error");
+  } finally {
+    setBusy(false);
+  }
+ }
  return <main className="safepay-shell auth-screen"><header className="auth-header"><button className="auth-back-button" onClick={() => router.replace("/")} aria-label="Retour" title="Retour"><BackIcon/></button><strong>Cyenoo</strong><span/></header><section className="auth-content"><div className="safepay-card auth-card"><div className="auth-kicker">Cyenoo</div><h1>Se connecter</h1><p className="sp-muted">La connexion Cyenoo se fait uniquement avec votre numéro de téléphone et un OTP sécurisé.</p><form onSubmit={otpSent ? verifyPhoneOtp : sendPhoneOtp} className="sp-form"><label>Numéro de téléphone<div className="phone-row"><select value={countryCode} onChange={e => { setCountryCode(e.target.value); setOtpSent(false); setOtp(""); clearNotice(); }} aria-label="Pays">{SAFE_PAY_COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.flag} {c.callingCode}</option>)}</select><input value={phoneLocal} onChange={e => setPhoneLocal(onlyPhoneCharacters(e.target.value))} placeholder="90 XX XX XX" inputMode="tel" autoComplete="tel" required /></div></label><div className="phone-country-meta">{country.flag} {country.callingCode} · {country.name} · {country.currency}</div>{otpSent && <label>Code OTP<span className="sp-code-wrap"><input value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ""))} maxLength={6} inputMode="numeric" autoComplete="one-time-code" placeholder="000000" type={otpVisible ? "text" : "password"} required/><button type="button" className="sp-code-toggle" onClick={() => setOtpVisible(v => !v)} aria-label={otpVisible ? "Masquer le code" : "Afficher le code"} title={otpVisible ? "Masquer le code" : "Afficher le code"}><EyeIcon hidden={!otpVisible}/></button></span></label>}<button className="safepay-primary" disabled={busy}>{busy ? (otpSent ? "Vérification…" : "Envoi…") : (otpSent ? "Vérifier le code" : "Envoyer le code")}</button></form>{message && <p className={`sp-form-message sp-form-message-${noticeKind}`} role={noticeKind === "error" ? "alert" : "status"}>{message}</p>}<p className="auth-footer">Pas encore de compte ? <button type="button" onClick={() => router.push("/auth")}>Créer un compte</button></p></div></section></main>; }
