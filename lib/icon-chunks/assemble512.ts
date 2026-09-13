@@ -1,13 +1,1 @@
-import { Y0 } from "./i512_0";
-import { Y1 } from "./i512_1";
-import { Y2 } from "./i512_2";
-import { Y3 } from "./i512_3";
-import { Y4 } from "./i512_4";
-import { Y5 } from "./i512_5";
-import { Y6 } from "./i512_6";
-import { Y7 } from "./i512_7";
-import { Y8 } from "./i512_8";
-import { Y9 } from "./i512_9";
-import { Y10 } from "./i512_10";
-import { Y11 } from "./i512_11";
-export const B64 = Y0+Y1+Y2+Y3+Y4+Y5+Y6+Y7+Y8+Y9+Y10+Y11;
+export { B64 } from "./i512";
