@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-/** Registers the service worker so Chrome/Android show "Install app". */
+/** Registers SW; drops old caches that used to serve a stale login page. */
 export default function PwaRegister() {
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -10,16 +10,22 @@ export default function PwaRegister() {
 
     const register = async () => {
       try {
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(
+            keys
+              .filter((k) => k.startsWith("cyenoo-pwa") || k === "cyenoo-pwa-v2")
+              .map((k) => caches.delete(k))
+          );
+        }
         const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
-        // Force update check so install criteria stay fresh
-        reg.update().catch(() => {});
+        await reg.update().catch(() => {});
       } catch (e) {
         console.warn("[Cyenoo PWA] SW register failed", e);
       }
     };
 
-    // Delay slightly so first paint is not blocked
-    const t = window.setTimeout(register, 800);
+    const t = window.setTimeout(register, 400);
     return () => window.clearTimeout(t);
   }, []);
 

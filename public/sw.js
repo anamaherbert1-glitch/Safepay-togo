@@ -1,9 +1,12 @@
-/* Cyenoo PWA service worker */
-const CACHE = "cyenoo-pwa-v2";
+/* Cyenoo PWA — network-first for pages, cache only static icons */
+const CACHE = "cyenoo-static-v3";
+const PRECACHE = ["/manifest.webmanifest", "/icon-192", "/icon"];
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(["/", "/manifest.webmanifest"])));
+  event.waitUntil(
+    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE).catch(() => {}))
+  );
 });
 
 self.addEventListener("activate", (event) => {
@@ -15,16 +18,50 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        const clone = response.clone();
-        if (response.ok && event.request.url.startsWith(self.location.origin)) {
-          caches.open(CACHE).then((c) => c.put(event.request, clone)).catch(() => {});
-        }
-        return response;
-      })
-      .catch(() => caches.match(event.request).then((r) => r || caches.match("/")))
-  );
+  const req = event.request;
+  if (req.method !== "GET") return;
+
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+
+  const isNavigation = req.mode === "navigate" || req.destination === "document";
+  const isAuthPath =
+    url.pathname.startsWith("/login") ||
+    url.pathname.startsWith("/auth") ||
+    url.pathname.startsWith("/dashboard") ||
+    url.pathname.startsWith("/admin") ||
+    url.pathname === "/";
+
+  if (isNavigation || isAuthPath) {
+    event.respondWith(
+      fetch(req).catch(() =>
+        new Response("<!doctype html><title>Cyenoo</title><body>Hors ligne</body>", {
+          headers: { "Content-Type": "text/html; charset=utf-8" },
+        })
+      )
+    );
+    return;
+  }
+
+  if (
+    url.pathname === "/icon" ||
+    url.pathname === "/icon-192" ||
+    url.pathname === "/apple-icon" ||
+    url.pathname === "/manifest.webmanifest"
+  ) {
+    event.respondWith(
+      caches.match(req).then(
+        (hit) =>
+          hit ||
+          fetch(req).then((res) => {
+            const clone = res.clone();
+            if (res.ok) caches.open(CACHE).then((c) => c.put(req, clone)).catch(() => {});
+            return res;
+          })
+      )
+    );
+    return;
+  }
+
+  event.respondWith(fetch(req));
 });

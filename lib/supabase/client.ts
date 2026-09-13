@@ -1,34 +1,40 @@
-import { createBrowserClient } from "@supabase/ssr";
+"use client";
+
+import { createClient as createSupabaseJsClient, type SupabaseClient } from "@supabase/supabase-js";
 
 /**
- * Browser Supabase client — session is stored in localStorage under "cyenoo-auth"
- * and mirrored in cookies (via @supabase/ssr). It survives closing the PWA until
- * the user explicitly signs out or clears site data / uninstalls the app.
+ * Single browser client. Session is stored ONLY in localStorage (key: cyenoo-auth).
+ * Survives close/reopen of the PWA until explicit signOut or uninstall / clear site data.
  */
-export function createClient() {
+let browserClient: SupabaseClient | null = null;
+
+export function createClient(): SupabaseClient {
+  if (typeof window === "undefined") {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    return createSupabaseJsClient(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  }
+
+  if (browserClient) return browserClient;
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
   if (!url || !anonKey) {
     throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
 
-  const isBrowser = typeof window !== "undefined";
-
-  return createBrowserClient(url, anonKey, {
+  browserClient = createSupabaseJsClient(url, anonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      flowType: "pkce",
-      storage: isBrowser ? window.localStorage : undefined,
+      storage: window.localStorage,
       storageKey: "cyenoo-auth",
-      experimental: { passkey: true },
-    },
-    cookieOptions: {
-      maxAge: 60 * 60 * 24 * 365, // 1 year
-      path: "/",
-      sameSite: "lax",
+      flowType: "pkce",
     },
   });
+
+  return browserClient;
 }

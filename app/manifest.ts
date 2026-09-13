@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Cyenoo",
     short_name: "Cyenoo",
     description: "Paiements sécurisés au Togo",
-    start_url: "/?source=pwa",
+    start_url: "/dashboard?source=pwa",
     scope: "/",
     display: "standalone",
     background_color: "#0032C7",
