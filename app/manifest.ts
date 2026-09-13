@@ -14,27 +14,15 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "fr",
     icons: [
       {
-        src: "/icon-192",
-        sizes: "192x192",
-        type: "image/png",
+        src: "/icons/cyenoo-icon.svg",
+        sizes: "1024x1024",
+        type: "image/svg+xml",
         purpose: "any",
       },
       {
-        src: "/icon-192",
-        sizes: "192x192",
-        type: "image/png",
-        purpose: "maskable",
-      },
-      {
-        src: "/icon",
-        sizes: "512x512",
-        type: "image/png",
-        purpose: "any",
-      },
-      {
-        src: "/icon",
-        sizes: "512x512",
-        type: "image/png",
+        src: "/icons/cyenoo-icon.svg",
+        sizes: "1024x1024",
+        type: "image/svg+xml",
         purpose: "maskable",
       },
     ],
