@@ -12,7 +12,7 @@ export function IconButton({ children, active = false, label, className = "", ..
       {...props}
       type={props.type ?? "button"}
       aria-label={label}
-      className={`safepay-icon${active ? " active" : ""}${className ? ` ${className}` : ""}`}
+      className={`cyenoo-icon${active ? " active" : ""}${className ? ` ${className}` : ""}`}
     >
       {children}
     </button>
