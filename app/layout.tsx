@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [{ url: "/icons/cyenoo-icon.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/icons/cyenoo-icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/icons/apple-icon-180.png", sizes: "180x180", type: "image/png" }],
   },
 };
 
