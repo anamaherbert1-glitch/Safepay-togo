@@ -33,12 +33,15 @@ export default function LoginPage() { const router = useRouter(); const [country
     }
     const boot = Array.isArray(rawBootstrap) ? rawBootstrap[0] : rawBootstrap;
     if (!boot?.onboarding_complete) {
-      try { sessionStorage.removeItem("safepay-profile-complete"); } catch {}
+      try { sessionStorage.removeItem("safepay-profile-complete"); localStorage.removeItem("cyenoo-profile-complete"); } catch {}
       notice("Dernière étape : complétez votre profil.", "info");
       router.replace("/auth?resume=1");
       return;
     }
-    try { sessionStorage.setItem("safepay-profile-complete", "1"); } catch {}
+    try {
+      sessionStorage.setItem("safepay-profile-complete", "1");
+      localStorage.setItem("cyenoo-profile-complete", "1");
+    } catch {}
     router.replace("/dashboard");
     router.refresh();
   } catch (err) {
