@@ -1,8 +1,7 @@
 import type { MetadataRoute } from "next";
-import { ICON_VERSION } from "@/lib/cyenoo-icon-data";
 
 export default function manifest(): MetadataRoute.Manifest {
-  const v = ICON_VERSION;
+  const v = "20260913clean";
   return {
     name: "Cyenoo",
     short_name: "Cyenoo",
