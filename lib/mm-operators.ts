@@ -1,10 +1,10 @@
-/** Cyenoo — opérateurs Mobile Money nationaux + badges marque. */
+/** Cyenoo — opérateurs Mobile Money nationaux + badges marque (couleurs officielles). */
 
 export type CorridorCountry = "TG" | "BF" | "BJ" | "CI" | "SN" | "ML" | "NE";
 
-/** Clé de marque pour le style du badge (couleur / initiales). */
+/** Clé de marque pour le style du badge. */
 export type MmBrand =
-  | "tmoney"
+  | "mixx" // Mixx by Yas (ex T-Money Togo)
   | "moov"
   | "mtn"
   | "orange"
@@ -32,13 +32,14 @@ export const CYENOO_CORRIDORS: { code: CorridorCountry; label: string; dial: str
 ];
 
 export const MM_OPERATORS: MmOperator[] = [
-  // Togo — T-Money + Moov Money
-  { code: "TMONEY", label: "T-Money", country: "TG", brand: "tmoney", short: "TM" },
+  // Togo — Mixx by Yas (ex T-Money) + Moov Money
+  { code: "MIXX_TG", label: "Mixx by Yas", country: "TG", brand: "mixx", short: "MX" },
+  { code: "TMONEY", label: "T-Money", country: "TG", brand: "mixx", short: "TM" },
   { code: "MOOV_TG", label: "Moov Money", country: "TG", brand: "moov", short: "MV" },
   // Burkina Faso
   { code: "ORANGE_BF", label: "Orange Money", country: "BF", brand: "orange", short: "OM" },
   { code: "MOOV_BF", label: "Moov Money", country: "BF", brand: "moov", short: "MV" },
-  // Bénin — MTN MoMo + Moov
+  // Bénin
   { code: "MTN_BJ", label: "MTN MoMo", country: "BJ", brand: "mtn", short: "MTN" },
   { code: "MOOV_BJ", label: "Moov Money", country: "BJ", brand: "moov", short: "MV" },
   // Côte d'Ivoire
@@ -58,22 +59,71 @@ export const MM_OPERATORS: MmOperator[] = [
   { code: "AIRTEL_NE", label: "Airtel Money", country: "NE", brand: "airtel", short: "AM" },
 ];
 
-/** Couleurs badge par marque (fond / texte / bordure). */
+/**
+ * Couleurs badge alignées sur les chartes marques (sources publiques Brandfetch / guides).
+ * - Mixx/Yas: bleu Yas #1A73E8 + jaune
+ * - Moov Africa: orange #E96805 + bleu
+ * - Orange Money: #FF7900
+ * - MTN MoMo: jaune #FFCC00
+ * - Wave: cyan #1DC8FF
+ * - Free: rouge Free
+ * - Airtel Money: rouge Airtel
+ */
 export const MM_BRAND_STYLE: Record<
   MmBrand,
   { bg: string; fg: string; border: string; accent: string }
 > = {
-  tmoney: { bg: "#E8F5E9", fg: "#1B5E20", border: "#81C784", accent: "#2E7D32" },
-  moov: { bg: "#E3F2FD", fg: "#0D47A1", border: "#64B5F6", accent: "#1565C0" },
-  mtn: { bg: "#FFF8E1", fg: "#F57F17", border: "#FFD54F", accent: "#FFC107" },
-  orange: { bg: "#FFF3E0", fg: "#E65100", border: "#FFB74D", accent: "#FF6D00" },
-  wave: { bg: "#E8EAF6", fg: "#283593", border: "#7986CB", accent: "#3F51B5" },
-  free: { bg: "#FCE4EC", fg: "#880E4F", border: "#F48FB1", accent: "#C2185B" },
-  airtel: { bg: "#FFEBEE", fg: "#B71C1C", border: "#EF9A9A", accent: "#D32F2F" },
+  mixx: {
+    bg: "#E8F0FE",
+    fg: "#1557B0",
+    border: "#90CAF9",
+    accent: "#1A73E8", // Yas / Mixx by Yas
+  },
+  moov: {
+    bg: "#FFF3E0",
+    fg: "#BF360C",
+    border: "#FFB74D",
+    accent: "#E96805", // Moov Africa orange
+  },
+  mtn: {
+    bg: "#FFFDE7",
+    fg: "#1A1A1A",
+    border: "#FFE082",
+    accent: "#FFCC00", // MTN Y'ello
+  },
+  orange: {
+    bg: "#FFF3E0",
+    fg: "#E65100",
+    border: "#FFB74D",
+    accent: "#FF7900", // Orange Money
+  },
+  wave: {
+    bg: "#E0F7FA",
+    fg: "#006064",
+    border: "#80DEEA",
+    accent: "#1DC8FF", // Wave mobile money
+  },
+  free: {
+    bg: "#FFEBEE",
+    fg: "#B71C1C",
+    border: "#EF9A9A",
+    accent: "#E60000", // Free
+  },
+  airtel: {
+    bg: "#FFEBEE",
+    fg: "#B71C1C",
+    border: "#EF9A9A",
+    accent: "#ED1C24", // Airtel Money
+  },
 };
 
 export function operatorsForCountry(country: CorridorCountry): MmOperator[] {
-  return MM_OPERATORS.filter((o) => o.country === country);
+  // Togo: afficher Mixx + Moov (T-Money gardé en alias technique mais masqué si Mixx présent)
+  const list = MM_OPERATORS.filter((o) => o.country === country);
+  if (country === "TG") {
+    return list.filter((o) => o.code !== "TMONEY"); // UI: Mixx by Yas + Moov
+  }
+  return list;
 }
 
 export function getOperatorByCode(code: string): MmOperator | undefined {
