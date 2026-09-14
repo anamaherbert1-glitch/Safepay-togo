@@ -11,6 +11,7 @@ import {
   corridorFromCountryCode,
   operatorsForCountry,
 } from "@/lib/mm-operators";
+import { OperatorBadgeGrid } from "@/components/mm/OperatorBadge";
 
 type Fees = {
   gross_amount: number;
@@ -53,10 +54,10 @@ export default function NewTransactionPage() {
   const [loadingFees, setLoadingFees] = useState(false);
   const [error, setError] = useState("");
   const [countryReady, setCountryReady] = useState(false);
+  const [buyerPhone, setBuyerPhone] = useState("");
 
   const operators = useMemo(() => operatorsForCountry(corridor), [corridor]);
 
-  // Auto-détecte le pays du profil utilisateur
   useEffect(() => {
     let active = true;
     (async () => {
@@ -66,11 +67,10 @@ export default function NewTransactionPage() {
         if (!active) return;
         const profile = Array.isArray(data) ? data[0] : data;
         const code = profile?.country || profile?.country_code || null;
-        if (code) {
-          setCorridor(corridorFromCountryCode(String(code)));
-        }
+        if (code) setCorridor(corridorFromCountryCode(String(code)));
+        if (profile?.phone) setBuyerPhone(String(profile.phone));
       } catch {
-        // garde TG par défaut
+        /* keep defaults */
       } finally {
         if (active) setCountryReady(true);
       }
@@ -176,24 +176,63 @@ export default function NewTransactionPage() {
           );
           return;
         }
-      } else {
-        const { data: deposit, error: depErr } = await s.rpc("create_transaction_mm_collect_intent", {
-          p_transaction_id: txId,
-          p_idempotency_key: `tx-collect-${txId}`,
-        });
-        if (depErr) {
-          router.replace(
-            `/transactions/${txId}?fund=direct&error=${encodeURIComponent(depErr.message)}`
-          );
-          return;
-        }
+        router.replace(`/transactions/${txId}`);
+        return;
+      }
+
+      // direct_mm: intent en base + appel collect prestataire
+      const { data: deposit, error: depErr } = await s.rpc("create_transaction_mm_collect_intent", {
+        p_transaction_id: txId,
+        p_idempotency_key: `tx-collect-${txId}`,
+      });
+      if (depErr) {
         router.replace(
-          `/transactions/${txId}?fund=direct&deposit=${(deposit as { id?: string })?.id ?? ""}`
+          `/transactions/${txId}?fund=direct&error=${encodeURIComponent(depErr.message)}`
         );
         return;
       }
 
-      router.replace(`/transactions/${txId}`);
+      const depositId = (deposit as { id?: string })?.id;
+      const collectAmount =
+        fees?.buyer_total ?? n;
+
+      const { data: collectData, error: collectErr } = await s.functions.invoke("cinetpay-deposit", {
+        body: {
+          amount: collectAmount,
+          currency: "XOF",
+          provider: buyerLabel,
+          operator_code: buyerOperator,
+          country: corridor,
+          phone: buyerPhone || user.phone || "",
+          idempotency_key: `tx-collect-${txId}`,
+          transaction_id: txId,
+          deposit_id: depositId,
+          return_url: `${window.location.origin}/transactions/${txId}`,
+        },
+      });
+
+      if (collectErr) {
+        router.replace(
+          `/transactions/${txId}?fund=direct&error=${encodeURIComponent(collectErr.message)}`
+        );
+        return;
+      }
+
+      if (collectData?.payment_url) {
+        window.location.assign(collectData.payment_url);
+        return;
+      }
+
+      if (!collectData?.success) {
+        const msg =
+          collectData?.message ||
+          collectData?.error ||
+          "Le prestataire Mobile Money n'a pas confirmé le paiement.";
+        router.replace(`/transactions/${txId}?fund=direct&error=${encodeURIComponent(msg)}`);
+        return;
+      }
+
+      router.replace(`/transactions/${txId}?fund=direct&deposit=${depositId ?? ""}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Impossible de créer la transaction.");
     } finally {
@@ -295,8 +334,7 @@ export default function NewTransactionPage() {
             </select>
           </label>
           <p className="sp-muted" style={{ fontSize: 12, marginTop: 4 }}>
-            Les envois se font uniquement entre numéros du même pays. Opérateurs adaptés
-            automatiquement.
+            Même pays uniquement. Les badges affichent les opérateurs disponibles.
           </p>
           <label style={{ marginTop: 12 }}>
             Numéro du destinataire
@@ -308,32 +346,25 @@ export default function NewTransactionPage() {
               onChange={(e) => setRecipientPhone(onlyPhoneCharacters(e.target.value))}
             />
           </label>
-          <label>
-            Opérateur du destinataire
-            <select
+
+          <div style={{ marginTop: 12 }}>
+            <span style={{ fontSize: 13, fontWeight: 700 }}>Opérateur du destinataire</span>
+            <OperatorBadgeGrid
+              operators={operators}
               value={recipientOperator}
-              onChange={(e) => setRecipientOperator(e.target.value)}
-            >
-              <option value="">Choisir…</option>
-              {operators.map((o) => (
-                <option key={o.code} value={o.code}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={setRecipientOperator}
+            />
+          </div>
+
           {paymentSource === "direct_mm" && (
-            <label>
-              Votre opérateur (paiement)
-              <select value={buyerOperator} onChange={(e) => setBuyerOperator(e.target.value)}>
-                <option value="">Choisir…</option>
-                {operators.map((o) => (
-                  <option key={o.code} value={o.code}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div style={{ marginTop: 14 }}>
+              <span style={{ fontSize: 13, fontWeight: 700 }}>Votre opérateur (paiement)</span>
+              <OperatorBadgeGrid
+                operators={operators}
+                value={buyerOperator}
+                onChange={setBuyerOperator}
+              />
+            </div>
           )}
         </section>
 
@@ -404,8 +435,7 @@ export default function NewTransactionPage() {
               </div>
             </div>
             <p style={{ marginTop: 12, fontSize: 13, color: "var(--sp-muted)" }}>
-              L&apos;argent reste bloqué dans Cyenoo jusqu&apos;à validation. Le destinataire est
-              notifié, puis peut retirer sur Mobile Money après confirmation.
+              L&apos;argent reste bloqué dans Cyenoo jusqu&apos;à validation.
             </p>
           </section>
         )}
