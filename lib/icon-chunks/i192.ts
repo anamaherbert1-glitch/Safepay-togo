@@ -1,1 +1,1 @@
-export const B64 = "PLACEHOLDER_WILL_REPLACE";
+export const B64 = "";

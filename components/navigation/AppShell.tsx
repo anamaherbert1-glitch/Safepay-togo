@@ -10,17 +10,70 @@ import { useCyenooLanguage } from "@/lib/i18n";
 const PROFILE_FLAG = "cyenoo-profile-complete";
 const BIO_FLAG = "cyenoo-biometric-unlocked";
 
-function HomeIcon() { return <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 10.5 12 3l8.5 7.5"/><path d="M5.5 9.5v10h13v-10M9.5 19.5v-6h5v6"/></svg>; }
-function TransactionsIcon() { return <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 7h11"/><path d="m14 4 3 3-3 3"/><path d="M18 17H7"/><path d="m10 14-3 3 3 3"/></svg>; }
-function NotificationsIcon() { return <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>; }
-function ProfileIcon() { return <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="9.2"/><circle cx="12" cy="9" r="2.7"/><path d="M7.2 18c.9-2.6 2.5-3.9 4.8-3.9s3.9 1.3 4.8 3.9"/></svg>; }
-function BackIcon() { return <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 5 8 12l7 7"/><path d="M9 12h9"/></svg>; }
-function withTimeout<T>(promise: PromiseLike<T>, ms = 20000): Promise<T> { return Promise.race([Promise.resolve(promise), new Promise<T>((_, reject) => setTimeout(() => reject(new Error("Chargement trop long.")), ms))]); }
-function fallbackPath(pathname: string) { if (pathname.startsWith("/transactions/")) return "/transactions"; if (pathname.startsWith("/wallet/")) return "/wallet"; if (pathname.startsWith("/services/")) return "/services"; if (pathname.startsWith("/support/")) return "/support"; return "/dashboard"; }
+function HomeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3.5 10.5 12 3l8.5 7.5" />
+      <path d="M5.5 9.5v10h13v-10M9.5 19.5v-6h5v6" />
+    </svg>
+  );
+}
+function TransactionsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 7h11" />
+      <path d="m14 4 3 3-3 3" />
+      <path d="M18 17H7" />
+      <path d="m10 14-3 3 3 3" />
+    </svg>
+  );
+}
+function NotificationsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+      <path d="M10 21h4" />
+    </svg>
+  );
+}
+function ProfileIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <circle cx="12" cy="12" r="9.2" />
+      <circle cx="12" cy="9" r="2.7" />
+      <path d="M7.2 18c.9-2.6 2.5-3.9 4.8-3.9s3.9 1.3 4.8 3.9" />
+    </svg>
+  );
+}
+function BackIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M15 5 8 12l7 7" />
+      <path d="M9 12h9" />
+    </svg>
+  );
+}
+function withTimeout<T>(promise: PromiseLike<T>, ms = 20000): Promise<T> {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error("Chargement trop long.")), ms)),
+  ]);
+}
+function fallbackPath(pathname: string) {
+  if (pathname.startsWith("/transactions/")) return "/transactions";
+  if (pathname.startsWith("/wallet/")) return "/wallet";
+  if (pathname.startsWith("/services/")) return "/services";
+  if (pathname.startsWith("/support/")) return "/support";
+  return "/dashboard";
+}
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const pathname = usePathname(); const router = useRouter(); const { language } = useCyenooLanguage();
-  const [checking, setChecking] = useState(true); const [authorized, setAuthorized] = useState(false); const [avatarUrl, setAvatarUrl] = useState("");
+  const pathname = usePathname();
+  const router = useRouter();
+  const { language } = useCyenooLanguage();
+  const [checking, setChecking] = useState(true);
+  const [authorized, setAuthorized] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState("");
   const items = [
     { href: "/dashboard", label: language === "en" ? "Home" : "Accueil", icon: <HomeIcon /> },
     { href: "/transactions", label: "Transactions", icon: <TransactionsIcon /> },
@@ -45,7 +98,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         let user = session?.user ?? null;
         if (!user) {
-          const { data: { user: u2 }, error: uErr } = await withTimeout(supabase.auth.getUser());
+          const {
+            data: { user: u2 },
+            error: uErr,
+          } = await withTimeout(supabase.auth.getUser());
           if (!active) return;
           if (uErr || !u2) {
             router.replace("/login");
@@ -91,9 +147,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           ) {
             const auth = supabase.auth as any;
             if (typeof auth.signInWithPasskey === "function") {
-              const listed = typeof auth.passkey?.list === "function"
-                ? await auth.passkey.list()
-                : { data: [], error: null };
+              const listed =
+                typeof auth.passkey?.list === "function"
+                  ? await auth.passkey.list()
+                  : { data: [], error: null };
               if (!listed.error && Array.isArray(listed.data) && listed.data.length > 0) {
                 const { error: passkeyError } = await auth.signInWithPasskey();
                 if (!passkeyError) {
@@ -124,7 +181,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         console.warn("[Cyenoo] AppShell auth", err);
         if (!active) return;
         try {
-          const { data: { session: s2 } } = await supabase.auth.getSession();
+          const {
+            data: { session: s2 },
+          } = await supabase.auth.getSession();
           if (!s2) router.replace("/login");
           else setAuthorized(true);
         } catch {
@@ -138,7 +197,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     load();
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_OUT" || event === "USER_DELETED") {
+      if (event === "SIGNED_OUT") {
         setAuthorized(false);
         try {
           localStorage.removeItem(PROFILE_FLAG);

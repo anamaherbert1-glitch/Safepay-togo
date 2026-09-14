@@ -1,1 +1,1 @@
-PLACEHOLDER2
+export const B64 = "";
