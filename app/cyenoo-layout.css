@@ -1,9 +1,7 @@
 /* =========================================================
-   Cyenoo layout system — restores cards, grids, empty states
-   and spacing that were missing after the rebrand.
+   Cyenoo layout system — cards, grids, empty states, services
    ========================================================= */
 
-/* Shell aliases (Cyenoo + legacy SafePay) */
 .cyenoo-shell,
 .safepay-shell {
   width: min(430px, 100vw);
@@ -171,7 +169,7 @@
   letter-spacing: -0.2px;
 }
 
-/* ---- Quick actions (Recharger / Envoyer / …) ---- */
+/* ---- Quick actions ---- */
 .sp-quick-actions {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -202,22 +200,10 @@
   flex: 0 0 auto;
 }
 
-.sp-action-icon.blue {
-  background: #e8f0ff;
-  color: #155eef;
-}
-.sp-action-icon.green {
-  background: #e8faf0;
-  color: #12b76a;
-}
-.sp-action-icon.violet {
-  background: #f0ecff;
-  color: #7a5af8;
-}
-.sp-action-icon.orange {
-  background: #fff4e8;
-  color: #f79009;
-}
+.sp-action-icon.blue { background: #e8f0ff; color: #155eef; }
+.sp-action-icon.green { background: #e8faf0; color: #12b76a; }
+.sp-action-icon.violet { background: #f0ecff; color: #7a5af8; }
+.sp-action-icon.orange { background: #fff4e8; color: #f79009; }
 
 /* ---- Empty states ---- */
 .sp-empty-state,
@@ -268,7 +254,7 @@
   min-width: 180px;
 }
 
-/* ---- Detail grid (profile info) ---- */
+/* ---- Detail grid ---- */
 .sp-detail-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -304,7 +290,7 @@
   word-break: break-word;
 }
 
-/* ---- Services grid ---- */
+/* ---- Services grid (home) ---- */
 .sp-services {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -334,23 +320,77 @@
   border-radius: 14px;
   display: grid;
   place-items: center;
+  flex-shrink: 0;
 }
 
-.service-icon.blue {
-  background: #e8f0ff;
-  color: #155eef;
+.service-icon.blue { background: #e8f0ff; color: #155eef; }
+.service-icon.green { background: #e8faf0; color: #12b76a; }
+.service-icon.violet { background: #f0ecff; color: #7a5af8; }
+.service-icon.orange { background: #fff4e8; color: #f79009; }
+
+/* ---- Services page list (Tous vos services) ---- */
+.sp-services-page {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
 }
-.service-icon.green {
-  background: #e8faf0;
-  color: #12b76a;
+
+.sp-service-card {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--sp-line);
+  background: var(--sp-card);
+  color: var(--sp-text);
+  text-align: left;
+  box-shadow: var(--sp-shadow);
+  min-width: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.service-icon.violet {
-  background: #f0ecff;
-  color: #7a5af8;
+
+.sp-service-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(16, 24, 40, 0.1);
 }
-.service-icon.orange {
-  background: #fff4e8;
-  color: #f79009;
+
+.sp-service-card:active {
+  transform: scale(0.99);
+}
+
+.sp-service-card > span:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.sp-service-card strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--sp-text);
+  line-height: 1.25;
+}
+
+.sp-service-card small {
+  display: block;
+  font-size: 12px;
+  color: var(--sp-muted);
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.sp-service-card > b {
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--sp-muted);
+  opacity: 0.7;
 }
 
 /* ---- Transaction / notification rows ---- */
@@ -377,8 +417,7 @@
   min-width: 0;
 }
 
-.sp-tx-icon,
-.sp-notification-dot {
+.sp-tx-icon {
   width: 40px;
   height: 40px;
   border-radius: 12px;
@@ -395,6 +434,8 @@
   border-radius: 50%;
   background: var(--sp-primary);
   padding: 0;
+  flex: 0 0 auto;
+  justify-self: center;
 }
 
 .sp-notification-row.read .sp-notification-dot {
@@ -452,7 +493,7 @@
 .sp-status-disputed { background: #fef3f2; color: #b42318; }
 .sp-status-cancelled { background: #f2f4f7; color: #475467; }
 
-/* ---- Action stack (profile buttons) ---- */
+/* ---- Action stack ---- */
 .sp-action-stack {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -516,48 +557,125 @@
   margin: 0;
 }
 
-/* ---- Dark theme adjustments ---- */
-:root[data-theme="dark"] .sp-action-icon.blue,
-:root:not([data-theme="light"]) .sp-action-icon.blue {
-  background: #142c55;
-  color: #70a2ff;
-}
-:root[data-theme="dark"] .sp-action-icon.green,
-:root:not([data-theme="light"]) .sp-action-icon.green {
-  background: #103326;
-  color: #5ee0a0;
-}
-:root[data-theme="dark"] .sp-action-icon.violet,
-:root:not([data-theme="light"]) .sp-action-icon.violet {
-  background: #2a214d;
-  color: #b9a7ff;
-}
-:root[data-theme="dark"] .sp-action-icon.orange,
-:root:not([data-theme="light"]) .sp-action-icon.orange {
-  background: #3b2912;
-  color: #ffc36b;
+/* ---- Header & bottom nav — LIGHT theme default ---- */
+.sp-header {
+  height: 64px;
+  padding: 10px 18px;
+  padding-top: max(10px, env(safe-area-inset-top));
+  display: grid;
+  grid-template-columns: 40px 1fr 40px;
+  align-items: center;
+  gap: 10px;
+  background: rgba(246, 248, 252, 0.96);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--sp-line);
 }
 
+.sp-header > strong {
+  font-size: 17px;
+  text-align: center;
+  color: var(--sp-text);
+}
+
+.sp-bottom-nav {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: min(430px, 100vw);
+  height: calc(70px + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: rgba(255, 255, 255, 0.98);
+  border-top: 1px solid var(--sp-line);
+  backdrop-filter: blur(12px);
+  z-index: 20;
+}
+
+.sp-bottom-nav button {
+  border: 0;
+  background: transparent;
+  color: var(--sp-muted);
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  min-height: 44px;
+}
+
+.sp-bottom-nav button.active {
+  color: var(--sp-primary);
+}
+
+.sp-bottom-nav button small {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* ---- Dark theme only when explicitly dark or system dark without light override ---- */
+:root[data-theme="dark"] .sp-header {
+  background: rgba(11, 16, 32, 0.94);
+  border-bottom-color: var(--sp-line);
+}
+
+:root[data-theme="dark"] .sp-bottom-nav {
+  background: rgba(17, 24, 39, 0.98);
+  border-top-color: var(--sp-line);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .sp-header {
+    background: rgba(11, 16, 32, 0.94);
+    border-bottom-color: var(--sp-line);
+  }
+  :root:not([data-theme="light"]) .sp-bottom-nav {
+    background: rgba(17, 24, 39, 0.98);
+    border-top-color: var(--sp-line);
+  }
+}
+
+/* Force light chrome when user chose light */
+:root[data-theme="light"] .sp-header {
+  background: rgba(246, 248, 252, 0.96) !important;
+  border-bottom-color: #e4e7ec !important;
+}
+
+:root[data-theme="light"] .sp-bottom-nav {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border-top-color: #e4e7ec !important;
+}
+
+:root[data-theme="light"] .sp-bottom-nav button {
+  color: #667085;
+}
+
+:root[data-theme="light"] .sp-bottom-nav button.active {
+  color: #155eef;
+}
+
+/* ---- Dark theme icon/status adjustments ---- */
+:root[data-theme="dark"] .sp-action-icon.blue,
+:root:not([data-theme="light"]) .sp-action-icon.blue { background: #142c55; color: #70a2ff; }
+:root[data-theme="dark"] .sp-action-icon.green,
+:root:not([data-theme="light"]) .sp-action-icon.green { background: #103326; color: #5ee0a0; }
+:root[data-theme="dark"] .sp-action-icon.violet,
+:root:not([data-theme="light"]) .sp-action-icon.violet { background: #2a214d; color: #b9a7ff; }
+:root[data-theme="dark"] .sp-action-icon.orange,
+:root:not([data-theme="light"]) .sp-action-icon.orange { background: #3b2912; color: #ffc36b; }
+
 :root[data-theme="dark"] .service-icon.blue,
-:root:not([data-theme="light"]) .service-icon.blue {
-  background: #142c55;
-  color: #70a2ff;
-}
+:root:not([data-theme="light"]) .service-icon.blue { background: #142c55; color: #70a2ff; }
 :root[data-theme="dark"] .service-icon.green,
-:root:not([data-theme="light"]) .service-icon.green {
-  background: #103326;
-  color: #5ee0a0;
-}
+:root:not([data-theme="light"]) .service-icon.green { background: #103326; color: #5ee0a0; }
 :root[data-theme="dark"] .service-icon.violet,
-:root:not([data-theme="light"]) .service-icon.violet {
-  background: #2a214d;
-  color: #b9a7ff;
-}
+:root:not([data-theme="light"]) .service-icon.violet { background: #2a214d; color: #b9a7ff; }
 :root[data-theme="dark"] .service-icon.orange,
-:root:not([data-theme="light"]) .service-icon.orange {
-  background: #3b2912;
-  color: #ffc36b;
-}
+:root:not([data-theme="light"]) .service-icon.orange { background: #3b2912; color: #ffc36b; }
 
 :root[data-theme="dark"] .sp-detail-grid > div,
 :root:not([data-theme="light"]) .sp-detail-grid > div {
@@ -585,4 +703,17 @@
     background: rgba(255, 255, 255, 0.04);
     border-color: var(--sp-line);
   }
+}
+
+.sp-inline-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sp-inline-actions .safepay-primary,
+.sp-inline-actions .cyenoo-primary {
+  flex: 1;
+  min-width: 140px;
 }
