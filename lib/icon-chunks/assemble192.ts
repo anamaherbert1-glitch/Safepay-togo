@@ -1,1 +1,1 @@
-export { B64 } from "./i192";
+export const B64 = "";
