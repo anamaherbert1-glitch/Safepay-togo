@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { MM_BRAND_STYLE, type MmOperator } from "@/lib/mm-operators";
 
 type Props = {
@@ -14,28 +15,50 @@ export function OperatorBadge({ operator, selected, onClick, size = "md" }: Prop
   const isButton = typeof onClick === "function";
   const pad = size === "sm" ? "8px 10px" : "12px 14px";
   const fontSize = size === "sm" ? 12 : 13;
-  const iconSize = size === "sm" ? 28 : 36;
+  const iconSize = size === "sm" ? 32 : 40;
+  const [imgOk, setImgOk] = useState(true);
+
+  const logo = (
+    <span
+      style={{
+        width: iconSize,
+        height: iconSize,
+        borderRadius: 10,
+        overflow: "hidden",
+        flexShrink: 0,
+        background: style.bg,
+        display: "grid",
+        placeItems: "center",
+        border: `1px solid ${style.border}`,
+      }}
+    >
+      {imgOk ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={operator.logo}
+          alt=""
+          width={iconSize}
+          height={iconSize}
+          style={{ width: iconSize, height: iconSize, objectFit: "cover" }}
+          onError={() => setImgOk(false)}
+        />
+      ) : (
+        <span
+          style={{
+            fontWeight: 900,
+            fontSize: size === "sm" ? 9 : 11,
+            color: style.accent,
+          }}
+        >
+          {operator.short}
+        </span>
+      )}
+    </span>
+  );
 
   const content = (
     <>
-      <span
-        style={{
-          width: iconSize,
-          height: iconSize,
-          borderRadius: 10,
-          background: style.accent,
-          color: "#fff",
-          display: "grid",
-          placeItems: "center",
-          fontWeight: 900,
-          fontSize: size === "sm" ? 9 : 11,
-          letterSpacing: "-0.02em",
-          flexShrink: 0,
-        }}
-        aria-hidden
-      >
-        {operator.short}
-      </span>
+      {logo}
       <span style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0, textAlign: "left" }}>
         <strong style={{ fontSize, fontWeight: 800, color: style.fg, lineHeight: 1.2 }}>
           {operator.label}
