@@ -8,6 +8,9 @@ export type CyenooCountry = {
   currency: string;
 };
 
+/** @deprecated use CyenooCountry */
+export type SafePayCountry = CyenooCountry;
+
 export const CYENOO_COUNTRIES: CyenooCountry[] = [
   { code: "TG", name: "Togo", callingCode: "+228", flag: "🇹🇬", currency: "XOF" },
   { code: "BJ", name: "Bénin", callingCode: "+229", flag: "🇧🇯", currency: "XOF" },
@@ -18,11 +21,17 @@ export const CYENOO_COUNTRIES: CyenooCountry[] = [
   { code: "FR", name: "France", callingCode: "+33", flag: "🇫🇷", currency: "EUR" },
 ];
 
+/** Alias de compatibilité pendant la transition Safepay → Cyenoo */
+export const SAFE_PAY_COUNTRIES = CYENOO_COUNTRIES;
+
 export function onlyPhoneCharacters(value: string) {
   return value.replace(/[^\d\s+()-]/g, "");
 }
 
-export function validatePhone(countryCode: string, local: string): { valid: true; e164: string } | { valid: false; reason: string } {
+export function validatePhone(
+  countryCode: string,
+  local: string
+): { valid: true; e164: string } | { valid: false; reason: string } {
   const country = CYENOO_COUNTRIES.find((c) => c.code === countryCode);
   if (!country) return { valid: false, reason: "Pays non supporté." };
   const raw = local.trim();
