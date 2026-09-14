@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
-  const v = "20260913clean";
+  const v = "20260914clean";
   return {
     name: "Cyenoo",
     short_name: "Cyenoo",
@@ -16,7 +16,7 @@ export default function manifest(): MetadataRoute.Manifest {
     icons: [
       { src: `/icon-192?v=${v}`, sizes: "192x192", type: "image/png", purpose: "any" },
       { src: `/icon-512?v=${v}`, sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: `/icon-512?v=${v}`, sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: `/icon?v=${v}`, sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }
