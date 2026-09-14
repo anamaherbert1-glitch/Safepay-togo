@@ -33,6 +33,10 @@ export function createClient(): SupabaseClient {
       storage: window.localStorage,
       storageKey: "cyenoo-auth",
       flowType: "pkce",
+      // Enable experimental passkeys so the SDK does not spam the UI with warnings
+      // when biometric features are used. Actual availability still depends on device.
+      // @ts-expect-error experimental flag supported by recent supabase-js
+      experimental: { passkeys: true },
     },
   });
 
