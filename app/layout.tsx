@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import "./cyenoo-fixes.css";
-import "./cyenoo-settings.css";
-import "./cyenoo-polish.css";
-import "./cyenoo-responsive.css";
-import "./cyenoo-theme.css";
+import "./safepay-fixes.css";
+import "./safepay-settings.css";
+import "./safepay-polish.css";
+import "./safepay-responsive.css";
+import "./safepay-theme.css";
 import "./cyenoo-contrast.css";
 import PwaRegister from "@/components/PwaRegister";
 
@@ -23,10 +23,10 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icon-192?v=20260913ref", sizes: "192x192", type: "image/png" },
-      { url: "/icon-512?v=20260913ref", sizes: "512x512", type: "image/png" },
+      { url: "/icon-192?v=20260914clean", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512?v=20260914clean", sizes: "512x512", type: "image/png" },
     ],
-    apple: [{ url: "/apple-icon?v=20260913ref", sizes: "180x180", type: "image/png" }],
+    apple: [{ url: "/apple-icon?v=20260914clean", sizes: "180x180", type: "image/png" }],
   },
 };
 
