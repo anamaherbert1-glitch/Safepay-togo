@@ -6,6 +6,7 @@ import "./safepay-polish.css";
 import "./safepay-responsive.css";
 import "./safepay-theme.css";
 import "./cyenoo-contrast.css";
+import "./cyenoo-layout.css";
 import PwaRegister from "@/components/PwaRegister";
 
 export const metadata: Metadata = {

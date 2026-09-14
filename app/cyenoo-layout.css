@@ -1,0 +1,588 @@
+/* =========================================================
+   Cyenoo layout system — restores cards, grids, empty states
+   and spacing that were missing after the rebrand.
+   ========================================================= */
+
+/* Shell aliases (Cyenoo + legacy SafePay) */
+.cyenoo-shell,
+.safepay-shell {
+  width: min(430px, 100vw);
+  min-height: 100dvh;
+  margin: 0 auto;
+  background: var(--sp-bg);
+  color: var(--sp-text);
+}
+
+.cyenoo-dashboard,
+.safepay-dashboard {
+  position: relative;
+  padding-bottom: calc(78px + env(safe-area-inset-bottom));
+}
+
+.sp-content {
+  padding: 8px 16px 24px;
+  min-width: 0;
+}
+
+.sp-page {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* ---- Page headers ---- */
+.sp-eyebrow {
+  margin: 10px 2px 2px;
+  color: var(--sp-muted);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.sp-title {
+  margin: 0 2px 14px;
+  font-size: 24px;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+  color: var(--sp-text);
+  font-weight: 800;
+}
+
+.sp-page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.sp-muted {
+  color: var(--sp-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+/* ---- Section cards ---- */
+.sp-section-card {
+  margin-top: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--sp-card);
+  border: 1px solid var(--sp-line);
+  box-shadow: var(--sp-shadow);
+  min-width: 0;
+}
+
+.sp-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.sp-section-head h2,
+.sp-section-card > h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--sp-text);
+}
+
+/* ---- Balance card ---- */
+.sp-balance-card {
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #155eef 0%, #0b4dcc 100%);
+  color: #fff;
+  box-shadow: 0 14px 30px rgba(21, 94, 239, 0.24);
+  margin-top: 4px;
+}
+
+.sp-balance-glow {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  right: -70px;
+  top: -80px;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.sp-balance-top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  opacity: 0.95;
+  z-index: 1;
+}
+
+.sp-eye {
+  border: 0;
+  background: transparent;
+  color: #fff;
+  padding: 4px;
+  opacity: 0.9;
+  display: grid;
+  place-items: center;
+}
+
+.sp-total {
+  position: relative;
+  margin: 16px 0 10px;
+  font-size: 32px;
+  font-weight: 850;
+  letter-spacing: -1px;
+  z-index: 1;
+}
+
+.sp-balance-meta {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.sp-balance-meta > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sp-balance-meta span {
+  font-size: 12px;
+  opacity: 0.9;
+  display: block;
+}
+
+.sp-balance-meta strong {
+  font-size: 15px;
+  font-weight: 800;
+  display: block;
+  letter-spacing: -0.2px;
+}
+
+/* ---- Quick actions (Recharger / Envoyer / …) ---- */
+.sp-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 14px 0 6px;
+}
+
+.sp-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--sp-text);
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 0;
+  padding: 4px 2px;
+}
+
+.sp-action-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.sp-action-icon.blue {
+  background: #e8f0ff;
+  color: #155eef;
+}
+.sp-action-icon.green {
+  background: #e8faf0;
+  color: #12b76a;
+}
+.sp-action-icon.violet {
+  background: #f0ecff;
+  color: #7a5af8;
+}
+.sp-action-icon.orange {
+  background: #fff4e8;
+  color: #f79009;
+}
+
+/* ---- Empty states ---- */
+.sp-empty-state,
+.sp-empty-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 28px 16px 24px;
+}
+
+.sp-empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: var(--sp-soft);
+  color: var(--sp-primary);
+  font-size: 22px;
+  margin-bottom: 2px;
+}
+
+.sp-empty-state strong,
+.sp-empty-list strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--sp-text);
+  margin: 0;
+}
+
+.sp-empty-state span,
+.sp-empty-list span {
+  display: block;
+  font-size: 13px;
+  color: var(--sp-muted);
+  line-height: 1.5;
+  max-width: 260px;
+  margin: 0;
+}
+
+.sp-empty-list .safepay-primary,
+.sp-empty-list button.safepay-primary {
+  margin-top: 8px;
+  width: auto;
+  min-width: 180px;
+}
+
+/* ---- Detail grid (profile info) ---- */
+.sp-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.sp-detail-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--sp-soft);
+  border: 1px solid transparent;
+}
+
+.sp-detail-grid span {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sp-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sp-detail-grid strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 750;
+  color: var(--sp-text);
+  word-break: break-word;
+}
+
+/* ---- Services grid ---- */
+.sp-services {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.sp-services button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 10px;
+  border-radius: 16px;
+  border: 1px solid var(--sp-line);
+  background: var(--sp-card);
+  color: var(--sp-text);
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 0;
+  box-shadow: var(--sp-shadow);
+}
+
+.service-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+}
+
+.service-icon.blue {
+  background: #e8f0ff;
+  color: #155eef;
+}
+.service-icon.green {
+  background: #e8faf0;
+  color: #12b76a;
+}
+.service-icon.violet {
+  background: #f0ecff;
+  color: #7a5af8;
+}
+.service-icon.orange {
+  background: #fff4e8;
+  color: #f79009;
+}
+
+/* ---- Transaction / notification rows ---- */
+.sp-transaction-list,
+.sp-notification-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sp-transaction-row,
+.sp-notification-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--sp-line);
+  background: var(--sp-card);
+  color: var(--sp-text);
+  text-align: left;
+  min-width: 0;
+}
+
+.sp-tx-icon,
+.sp-notification-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--sp-soft);
+  color: var(--sp-primary);
+  flex: 0 0 auto;
+}
+
+.sp-notification-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--sp-primary);
+  padding: 0;
+}
+
+.sp-notification-row.read .sp-notification-dot {
+  background: var(--sp-line);
+}
+
+.sp-tx-main,
+.sp-notification-row > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sp-tx-main strong,
+.sp-notification-row strong {
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--sp-text);
+}
+
+.sp-tx-main small,
+.sp-notification-row small {
+  font-size: 11px;
+  color: var(--sp-muted);
+  display: block;
+}
+
+.sp-tx-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  min-width: 0;
+}
+
+.sp-tx-side strong {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.sp-status {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--sp-soft);
+  color: var(--sp-primary);
+}
+
+.sp-status-pending { background: #fff4e5; color: #b54708; }
+.sp-status-funded { background: #e8f0ff; color: #155eef; }
+.sp-status-delivered { background: #e8faf0; color: #027a48; }
+.sp-status-completed { background: #e8faf0; color: #027a48; }
+.sp-status-disputed { background: #fef3f2; color: #b42318; }
+.sp-status-cancelled { background: #f2f4f7; color: #475467; }
+
+/* ---- Action stack (profile buttons) ---- */
+.sp-action-stack {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.sp-action-stack .sp-secondary-button {
+  min-height: 44px;
+}
+
+.sp-action-stack .safepay-primary,
+.sp-action-stack .sp-submit {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+}
+
+.sp-secondary-button {
+  border: 1px solid var(--sp-line);
+  background: var(--sp-card);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-weight: 700;
+  color: var(--sp-text);
+  font-size: 13px;
+}
+
+.sp-success-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #027a48;
+}
+
+.sp-error,
+.sp-form-error {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fef3f2;
+  color: #b42318;
+  border: 1px solid #fecdca;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* ---- Profile card ---- */
+.sp-profile-card {
+  text-align: center;
+  padding: 24px 16px;
+}
+
+.sp-profile-card h2 {
+  margin: 8px 0 2px;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.sp-profile-card .sp-muted {
+  margin: 0;
+}
+
+/* ---- Dark theme adjustments ---- */
+:root[data-theme="dark"] .sp-action-icon.blue,
+:root:not([data-theme="light"]) .sp-action-icon.blue {
+  background: #142c55;
+  color: #70a2ff;
+}
+:root[data-theme="dark"] .sp-action-icon.green,
+:root:not([data-theme="light"]) .sp-action-icon.green {
+  background: #103326;
+  color: #5ee0a0;
+}
+:root[data-theme="dark"] .sp-action-icon.violet,
+:root:not([data-theme="light"]) .sp-action-icon.violet {
+  background: #2a214d;
+  color: #b9a7ff;
+}
+:root[data-theme="dark"] .sp-action-icon.orange,
+:root:not([data-theme="light"]) .sp-action-icon.orange {
+  background: #3b2912;
+  color: #ffc36b;
+}
+
+:root[data-theme="dark"] .service-icon.blue,
+:root:not([data-theme="light"]) .service-icon.blue {
+  background: #142c55;
+  color: #70a2ff;
+}
+:root[data-theme="dark"] .service-icon.green,
+:root:not([data-theme="light"]) .service-icon.green {
+  background: #103326;
+  color: #5ee0a0;
+}
+:root[data-theme="dark"] .service-icon.violet,
+:root:not([data-theme="light"]) .service-icon.violet {
+  background: #2a214d;
+  color: #b9a7ff;
+}
+:root[data-theme="dark"] .service-icon.orange,
+:root:not([data-theme="light"]) .service-icon.orange {
+  background: #3b2912;
+  color: #ffc36b;
+}
+
+:root[data-theme="dark"] .sp-detail-grid > div,
+:root:not([data-theme="light"]) .sp-detail-grid > div {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--sp-line);
+}
+
+:root[data-theme="dark"] .sp-status-pending { background: #3b2912; color: #ffc36b; }
+:root[data-theme="dark"] .sp-status-funded { background: #142c55; color: #70a2ff; }
+:root[data-theme="dark"] .sp-status-delivered,
+:root[data-theme="dark"] .sp-status-completed { background: #103326; color: #5ee0a0; }
+:root[data-theme="dark"] .sp-status-disputed { background: #3b1219; color: #fda29b; }
+:root[data-theme="dark"] .sp-status-cancelled { background: #1f2937; color: #98a2b3; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .sp-action-icon.blue { background: #142c55; color: #70a2ff; }
+  :root:not([data-theme="light"]) .sp-action-icon.green { background: #103326; color: #5ee0a0; }
+  :root:not([data-theme="light"]) .sp-action-icon.violet { background: #2a214d; color: #b9a7ff; }
+  :root:not([data-theme="light"]) .sp-action-icon.orange { background: #3b2912; color: #ffc36b; }
+  :root:not([data-theme="light"]) .service-icon.blue { background: #142c55; color: #70a2ff; }
+  :root:not([data-theme="light"]) .service-icon.green { background: #103326; color: #5ee0a0; }
+  :root:not([data-theme="light"]) .service-icon.violet { background: #2a214d; color: #b9a7ff; }
+  :root:not([data-theme="light"]) .service-icon.orange { background: #3b2912; color: #ffc36b; }
+  :root:not([data-theme="light"]) .sp-detail-grid > div {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--sp-line);
+  }
+}
