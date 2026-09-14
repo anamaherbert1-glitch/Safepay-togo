@@ -4,7 +4,13 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { SAFE_PAY_COUNTRIES, onlyPhoneCharacters, validatePhone } from "@/lib/phone";
-import { CYENOO_CORRIDORS, CorridorCountry, PaymentSource, operatorsForCountry } from "@/lib/mm-operators";
+import {
+  CYENOO_CORRIDORS,
+  CorridorCountry,
+  PaymentSource,
+  corridorFromCountryCode,
+  operatorsForCountry,
+} from "@/lib/mm-operators";
 
 type Fees = {
   gross_amount: number;
@@ -21,6 +27,16 @@ type Fees = {
 const money = (n: number) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "XOF", maximumFractionDigits: 0 }).format(n);
 
+const PHONE_PLACEHOLDERS: Partial<Record<CorridorCountry, string>> = {
+  TG: "90 00 00 00",
+  BF: "70 00 00 00",
+  BJ: "90 00 00 00",
+  CI: "07 00 00 00 00",
+  SN: "77 000 00 00",
+  ML: "70 00 00 00",
+  NE: "90 00 00 00",
+};
+
 export default function NewTransactionPage() {
   const router = useRouter();
   const [paymentSource, setPaymentSource] = useState<PaymentSource>("wallet");
@@ -36,8 +52,33 @@ export default function NewTransactionPage() {
   const [busy, setBusy] = useState(false);
   const [loadingFees, setLoadingFees] = useState(false);
   const [error, setError] = useState("");
+  const [countryReady, setCountryReady] = useState(false);
 
   const operators = useMemo(() => operatorsForCountry(corridor), [corridor]);
+
+  // Auto-détecte le pays du profil utilisateur
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const s = createClient();
+        const { data } = await s.rpc("get_my_profile");
+        if (!active) return;
+        const profile = Array.isArray(data) ? data[0] : data;
+        const code = profile?.country || profile?.country_code || null;
+        if (code) {
+          setCorridor(corridorFromCountryCode(String(code)));
+        }
+      } catch {
+        // garde TG par défaut
+      } finally {
+        if (active) setCountryReady(true);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     setRecipientOperator("");
@@ -99,13 +140,14 @@ export default function NewTransactionPage() {
     setBusy(true);
     try {
       const s = createClient();
-      const { data: { user } } = await s.auth.getUser();
+      const {
+        data: { user },
+      } = await s.auth.getUser();
       if (!user) throw new Error("Session expirée. Reconnectez-vous.");
 
       const recipientLabel =
         operators.find((o) => o.code === recipientOperator)?.label ?? recipientOperator;
-      const buyerLabel =
-        operators.find((o) => o.code === buyerOperator)?.label ?? buyerOperator;
+      const buyerLabel = operators.find((o) => o.code === buyerOperator)?.label ?? buyerOperator;
 
       const { data: id, error: e } = await s.rpc("create_cyenoo_transaction", {
         p_recipient_phone: phoneResult.e164,
@@ -129,7 +171,9 @@ export default function NewTransactionPage() {
           p_transaction_id: txId,
         });
         if (fundErr) {
-          router.replace(`/transactions/${txId}?fund=wallet&error=${encodeURIComponent(fundErr.message)}`);
+          router.replace(
+            `/transactions/${txId}?fund=wallet&error=${encodeURIComponent(fundErr.message)}`
+          );
           return;
         }
       } else {
@@ -138,10 +182,14 @@ export default function NewTransactionPage() {
           p_idempotency_key: `tx-collect-${txId}`,
         });
         if (depErr) {
-          router.replace(`/transactions/${txId}?fund=direct&error=${encodeURIComponent(depErr.message)}`);
+          router.replace(
+            `/transactions/${txId}?fund=direct&error=${encodeURIComponent(depErr.message)}`
+          );
           return;
         }
-        router.replace(`/transactions/${txId}?fund=direct&deposit=${(deposit as { id?: string })?.id ?? ""}`);
+        router.replace(
+          `/transactions/${txId}?fund=direct&deposit=${(deposit as { id?: string })?.id ?? ""}`
+        );
         return;
       }
 
@@ -153,8 +201,10 @@ export default function NewTransactionPage() {
     }
   }
 
+  const corridorLabel = CYENOO_CORRIDORS.find((c) => c.code === corridor)?.label ?? corridor;
+
   return (
-    <main className="sp-page">
+    <main className="sp-page" style={{ padding: "8px 16px 28px" }}>
       <div className="sp-page-head">
         <div>
           <p className="sp-eyebrow">Cyenoo</p>
@@ -169,18 +219,60 @@ export default function NewTransactionPage() {
         <section className="sp-section-card">
           <h2>1. Comment payez-vous ?</h2>
           <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
-            <label style={{ display: "flex", gap: 12, padding: 14, borderRadius: 14, border: paymentSource === "wallet" ? "1.5px solid #3b82f6" : "1px solid rgba(148,163,184,.2)", cursor: "pointer" }}>
-              <input type="radio" name="paymentSource" checked={paymentSource === "wallet"} onChange={() => setPaymentSource("wallet")} />
+            <label
+              style={{
+                display: "flex",
+                gap: 12,
+                padding: 14,
+                borderRadius: 14,
+                border:
+                  paymentSource === "wallet"
+                    ? "1.5px solid #3b82f6"
+                    : "1px solid rgba(148,163,184,.25)",
+                cursor: "pointer",
+                background: "var(--sp-card)",
+              }}
+            >
+              <input
+                type="radio"
+                name="paymentSource"
+                checked={paymentSource === "wallet"}
+                onChange={() => setPaymentSource("wallet")}
+              />
               <span>
-                <strong>Paiement par wallet</strong><br />
-                <small className="sp-muted">Utilise le solde Cyenoo. Rechargez d&apos;abord si besoin.</small>
+                <strong>Paiement par wallet</strong>
+                <br />
+                <small className="sp-muted">
+                  Utilise le solde Cyenoo. Rechargez d&apos;abord si besoin.
+                </small>
               </span>
             </label>
-            <label style={{ display: "flex", gap: 12, padding: 14, borderRadius: 14, border: paymentSource === "direct_mm" ? "1.5px solid #3b82f6" : "1px solid rgba(148,163,184,.2)", cursor: "pointer" }}>
-              <input type="radio" name="paymentSource" checked={paymentSource === "direct_mm"} onChange={() => setPaymentSource("direct_mm")} />
+            <label
+              style={{
+                display: "flex",
+                gap: 12,
+                padding: 14,
+                borderRadius: 14,
+                border:
+                  paymentSource === "direct_mm"
+                    ? "1.5px solid #3b82f6"
+                    : "1px solid rgba(148,163,184,.25)",
+                cursor: "pointer",
+                background: "var(--sp-card)",
+              }}
+            >
+              <input
+                type="radio"
+                name="paymentSource"
+                checked={paymentSource === "direct_mm"}
+                onChange={() => setPaymentSource("direct_mm")}
+              />
               <span>
-                <strong>Paiement direct Mobile Money</strong><br />
-                <small className="sp-muted">Prélèvement immédiat sur T-Money / Moov / Orange (selon le pays).</small>
+                <strong>Paiement direct Mobile Money</strong>
+                <br />
+                <small className="sp-muted">
+                  Prélèvement immédiat sur l&apos;opérateur de votre pays ({corridorLabel}).
+                </small>
               </span>
             </label>
           </div>
@@ -190,25 +282,43 @@ export default function NewTransactionPage() {
           <h2>2. Destinataire (Mobile Money)</h2>
           <label>
             Pays
-            <select value={corridor} onChange={(e) => setCorridor(e.target.value as CorridorCountry)}>
+            <select
+              value={corridor}
+              onChange={(e) => setCorridor(e.target.value as CorridorCountry)}
+              disabled={!countryReady}
+            >
               {CYENOO_CORRIDORS.map((c) => (
-                <option key={c.code} value={c.code}>{c.label}</option>
+                <option key={c.code} value={c.code}>
+                  {c.label}
+                </option>
               ))}
             </select>
           </label>
           <p className="sp-muted" style={{ fontSize: 12, marginTop: 4 }}>
-            Les envois se font uniquement entre numéros du même pays.
+            Les envois se font uniquement entre numéros du même pays. Opérateurs adaptés
+            automatiquement.
           </p>
           <label style={{ marginTop: 12 }}>
             Numéro du destinataire
-            <input inputMode="tel" autoComplete="tel" placeholder={corridor === "TG" ? "90 00 00 00" : "70 00 00 00"} value={recipientPhone} onChange={(e) => setRecipientPhone(onlyPhoneCharacters(e.target.value))} />
+            <input
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder={PHONE_PLACEHOLDERS[corridor] ?? "00 00 00 00"}
+              value={recipientPhone}
+              onChange={(e) => setRecipientPhone(onlyPhoneCharacters(e.target.value))}
+            />
           </label>
           <label>
             Opérateur du destinataire
-            <select value={recipientOperator} onChange={(e) => setRecipientOperator(e.target.value)}>
+            <select
+              value={recipientOperator}
+              onChange={(e) => setRecipientOperator(e.target.value)}
+            >
               <option value="">Choisir…</option>
               {operators.map((o) => (
-                <option key={o.code} value={o.code}>{o.label}</option>
+                <option key={o.code} value={o.code}>
+                  {o.label}
+                </option>
               ))}
             </select>
           </label>
@@ -218,7 +328,9 @@ export default function NewTransactionPage() {
               <select value={buyerOperator} onChange={(e) => setBuyerOperator(e.target.value)}>
                 <option value="">Choisir…</option>
                 {operators.map((o) => (
-                  <option key={o.code} value={o.code}>{o.label}</option>
+                  <option key={o.code} value={o.code}>
+                    {o.label}
+                  </option>
                 ))}
               </select>
             </label>
@@ -229,19 +341,39 @@ export default function NewTransactionPage() {
           <h2>3. Détails de la transaction</h2>
           <label>
             Description
-            <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ex. Achat téléphone, service, etc." required />
+            <input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Ex. Achat téléphone, service, etc."
+              required
+            />
           </label>
           <label>
             Montant (XOF)
-            <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))} placeholder="0" required />
+            <input
+              inputMode="decimal"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))}
+              placeholder="0"
+              required
+            />
           </label>
           <label>
             Délai de livraison (optionnel)
-            <input value={deliveryDelay} onChange={(e) => setDeliveryDelay(e.target.value)} placeholder="Ex. 48 h" />
+            <input
+              value={deliveryDelay}
+              onChange={(e) => setDeliveryDelay(e.target.value)}
+              placeholder="Ex. 48 h"
+            />
           </label>
           <label>
             Conditions (optionnel)
-            <textarea value={conditions} onChange={(e) => setConditions(e.target.value)} rows={3} placeholder="Conditions convenues entre les parties" />
+            <textarea
+              value={conditions}
+              onChange={(e) => setConditions(e.target.value)}
+              rows={3}
+              placeholder="Conditions convenues entre les parties"
+            />
           </label>
         </section>
 
@@ -250,24 +382,55 @@ export default function NewTransactionPage() {
           <section className="sp-section-card" style={{ marginTop: 12 }}>
             <h2>Récapitulatif</h2>
             <div className="sp-detail-grid">
-              <div><span>Montant</span><strong>{money(fees.gross_amount)}</strong></div>
-              <div><span>Protection Cyenoo</span><strong>{money(fees.safepay_fee)}</strong></div>
-              <div><span>Total à payer</span><strong>{money(fees.buyer_total)}</strong></div>
-              <div><span>Bloqué (escrow)</span><strong>{money(fees.escrow_amount)}</strong></div>
-              <div><span>Destinataire recevra</span><strong>{money(fees.seller_net)}</strong></div>
+              <div>
+                <span>Montant</span>
+                <strong>{money(fees.gross_amount)}</strong>
+              </div>
+              <div>
+                <span>Protection Cyenoo</span>
+                <strong>{money(fees.safepay_fee)}</strong>
+              </div>
+              <div>
+                <span>Total à payer</span>
+                <strong>{money(fees.buyer_total)}</strong>
+              </div>
+              <div>
+                <span>Bloqué (escrow)</span>
+                <strong>{money(fees.escrow_amount)}</strong>
+              </div>
+              <div>
+                <span>Destinataire recevra</span>
+                <strong>{money(fees.seller_net)}</strong>
+              </div>
             </div>
-            <p style={{ marginTop: 12, fontSize: 13, color: "#8094aa" }}>
-              L&apos;argent reste bloqué dans Cyenoo jusqu&apos;à validation. Le destinataire est notifié, puis peut retirer sur Mobile Money après confirmation.
+            <p style={{ marginTop: 12, fontSize: 13, color: "var(--sp-muted)" }}>
+              L&apos;argent reste bloqué dans Cyenoo jusqu&apos;à validation. Le destinataire est
+              notifié, puis peut retirer sur Mobile Money après confirmation.
             </p>
           </section>
         )}
 
-        {error && <p className="sp-form-error" role="alert">{error}</p>}
+        {error && (
+          <p className="sp-form-error" role="alert">
+            {error}
+          </p>
+        )}
 
         <div className="sp-inline-actions" style={{ marginTop: 16 }}>
-          <button type="button" className="sp-secondary-button" onClick={() => router.back()} disabled={busy}>Retour</button>
+          <button
+            type="button"
+            className="sp-secondary-button"
+            onClick={() => router.back()}
+            disabled={busy}
+          >
+            Retour
+          </button>
           <button type="submit" className="safepay-primary cyenoo-primary" disabled={busy}>
-            {busy ? "Traitement…" : paymentSource === "wallet" ? "Créer et sécuriser (wallet)" : "Créer et payer (Mobile Money)"}
+            {busy
+              ? "Traitement…"
+              : paymentSource === "wallet"
+                ? "Créer et sécuriser (wallet)"
+                : "Créer et payer (Mobile Money)"}
           </button>
         </div>
       </form>
