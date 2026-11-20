@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import type { CSSProperties } from "react";
 
 type TestUser = { id: string; display_name: string; phone: string; role: string; country: string };
 type TestTx = { id: string; reference: string; description: string; amount: number; currency: string; status: string; payment_method: string; buyer_id: string; seller_id: string };
@@ -17,7 +18,7 @@ export default function TestModePage() {
   const [data, setData] = useState<Snapshot | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const [code, setCode] = useState(ACCESS_CODE);
+  const code = ACCESS_CODE;
 
   const callApi = useCallback(async (payload: Record<string, unknown>) => {
     const response = await fetch(apiUrl, { method: "POST", headers: { "Content-Type": "application/json", apikey: anonKey, "x-test-code": code }, body: JSON.stringify(payload) });
@@ -43,7 +44,7 @@ export default function TestModePage() {
   }
 
   const money = (amount: number, currency: string) => new Intl.NumberFormat("fr-FR", { style: "currency", currency, maximumFractionDigits: 0 }).format(Number(amount));
-  const card: React.CSSProperties = { background: "#fff", border: "1px solid #e5e7eb", borderRadius: 16, padding: 16 };
+  const card: CSSProperties = { background: "#fff", border: "1px solid #e5e7eb", borderRadius: 16, padding: 16 };
   const button: React.CSSProperties = { border: 0, borderRadius: 10, padding: "10px 12px", background: "#087f5b", color: "#fff", fontWeight: 700, cursor: "pointer", margin: "4px 4px 4px 0" };
 
   return <main style={{ minHeight: "100vh", background: "#f4f7f6", color: "#17211e", padding: "22px 14px 48px", fontFamily: "Arial, sans-serif" }}>
